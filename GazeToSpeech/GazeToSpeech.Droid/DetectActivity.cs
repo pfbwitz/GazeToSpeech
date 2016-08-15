@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using Android.Speech.Tts;
 using Android.Views;
 using Android.Widget;
-using PupilDetector.Common;
-using PupilDetector.Detection;
+using GazeToSpeech.Droid.Common;
+using GazeToSpeech.Droid.Detection;
 using Java.IO;
 using OpenCV.Android;
 using OpenCV.Core;
@@ -13,61 +16,65 @@ using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
 using Size = OpenCV.Core.Size;
 
-namespace PupilDetector
+namespace GazeToSpeech.Droid
 {
-    [Activity(Label = "Pupil tracking", MainLauncher = true, ConfigurationChanges = ConfigChanges.Orientation, 
+    [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
         ScreenOrientation = ScreenOrientation.Landscape)]
     public class DetectActivity : Activity, CameraBridgeViewBase.ICvCameraViewListener2
     {
         #region properties
 
-            #region public
+        #region public
 
-            public Point PosLeft;
-            public Point PosRight;
+        public TextToSpeechHelper TextToSpeechHelper;
 
-            public static readonly int JavaDetector = 0;
-            public static readonly int NativeDetector = 1;
+        public List<string> CharacterBuffer = new List<string>();
 
-            public Mat MRgba;
-            public Mat MGray;
-            public File MCascadeFile { get; set; }
-            public File MCascadeFileEye { get; set; }
-            public CascadeClassifier MJavaDetector { get; set; }
-            public CascadeClassifier MJavaDetectorEye { get; set; }
-            public DetectionBasedTracker MNativeDetector { get; set; }
-            public DetectionBasedTracker MNativeDetectorEye { get; set; }
+        public Point PosLeft;
+        public Point PosRight;
 
-            public TextView TextView1;
-            public TextView TextView2;
-            public TextView Textview3;
+        public static readonly int JavaDetector = 0;
+        public static readonly int NativeDetector = 1;
 
-            #endregion
+        public Mat MRgba;
+        public Mat MGray;
+        public File MCascadeFile { get; set; }
+        public File MCascadeFileEye { get; set; }
+        public CascadeClassifier MJavaDetector { get; set; }
+        public CascadeClassifier MJavaDetectorEye { get; set; }
+        public DetectionBasedTracker MNativeDetector { get; set; }
+        public DetectionBasedTracker MNativeDetectorEye { get; set; }
 
-            #region private
+        public TextView TextView1;
+        public TextView TextView2;
+        public TextView Textview3;
 
-            public readonly DetectActivity Instance;
+        #endregion
 
-            private bool _fpsDetermined;
+        #region private
 
-            private int _framecount;
-            private DateTime? _start;
+        public readonly DetectActivity Instance;
 
-            private int _framesPerSecond;
+        private bool _fpsDetermined;
 
-            private readonly int _mDetectorType = JavaDetector;
+        private int _framecount;
+        private DateTime? _start;
 
-            private float _mRelativeFaceSize = 0.2f;
-            private int _mAbsoluteFaceSize = 0;
+        private int _framesPerSecond;
 
-            private CameraBridgeViewBase _mOpenCvCameraView;
+        private readonly int _mDetectorType = JavaDetector;
 
-            private Callback _mLoaderCallback;
+        private float _mRelativeFaceSize = 0.2f;
+        private int _mAbsoluteFaceSize = 0;
 
-            
+        private CameraBridgeViewBase _mOpenCvCameraView;
 
-            #endregion
+        private Callback _mLoaderCallback;
+
+
+
+        #endregion
 
         #endregion
 
@@ -92,7 +99,7 @@ namespace PupilDetector
             TextView2 = FindViewById<TextView>(Resource.Id.tv2);
             Textview3 = FindViewById<TextView>(Resource.Id.tv3);
 
-            _mLoaderCallback = new Callback(this, this, _mOpenCvCameraView);
+            _mLoaderCallback = new Callback(this, _mOpenCvCameraView);
         }
 
         protected override void OnPause()
@@ -187,21 +194,49 @@ namespace PupilDetector
                 RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
 
                 if (ShouldAct())
-                {
-                    
-                }
+                    RunOnUiThread(() => HandleEyePosition(avgPos, eyesAreClosed));
             }
             else
                 RunOnUiThread(() => this.PutText(new[] { TextView1, TextView2, Textview3 }, string.Empty));
 
             return MRgba;
         }
-
         #endregion
+
+        public void HandleEyePosition(Point position, bool eyesAreClosed)
+        {
+            if (CharacterBuffer.Count < "peter".Length)
+            {
+                switch (CharacterBuffer.Count)
+                {
+                    case 0:
+                        CharacterBuffer.Add("p");
+                        break;
+                         case 1:
+                        CharacterBuffer.Add("e");
+                        break;
+                         case 2:
+                        CharacterBuffer.Add("t");
+                        break;
+                         case 3:
+                        CharacterBuffer.Add("e");
+                        break;
+                        case 4:
+                        CharacterBuffer.Add("r");
+                        break;
+
+                }
+                TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                return;
+            }
+            TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
+            CharacterBuffer.Clear();
+        }
 
         public DetectActivity()
         {
             Instance = this;
+            TextToSpeechHelper = new TextToSpeechHelper(this);
             var mDetectorName = new string[2];
             mDetectorName[JavaDetector] = "Java";
             mDetectorName[NativeDetector] = "Native (tracking)";
