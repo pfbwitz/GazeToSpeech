@@ -11,7 +11,7 @@ namespace GazeToSpeech.Droid.Common
     {
         private static int _blinkCount;
 
-        public static Point GetAvgEyePoint(this DetectActivity activity)
+        public static Point GetAvgEyePoint(this CaptureActivity activity)
         {
             var avgXpos = 0;
             var avgYpos = 0;
@@ -67,7 +67,7 @@ namespace GazeToSpeech.Droid.Common
             return face;
         }
 
-        public static Mat DetectEye(this DetectActivity activity, CascadeClassifier clasificator, Rect area, int size, bool isLefteye, out bool pupilFound)
+        public static Mat DetectEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size, bool isLefteye, out bool pupilFound)
         {
             var template = new Mat();
             var mRoi = activity.MGray.Submat(area);
@@ -165,12 +165,12 @@ namespace GazeToSpeech.Droid.Common
             return template;
         }
 
-        public static Mat DetectLeftEye(this DetectActivity activity, CascadeClassifier clasificator, Rect area, int size, out bool pupilFound)
+        public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size, out bool pupilFound)
         {
             return activity.DetectEye(clasificator, area, size, true, out pupilFound);
         }
 
-        public static Mat DetectRightEye(this DetectActivity activity, CascadeClassifier clasificator, Rect area, int size, out bool pupilFound)
+        public static Mat DetectRightEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size, out bool pupilFound)
         {
             return activity.DetectEye(clasificator, area, size, false, out pupilFound);
         }

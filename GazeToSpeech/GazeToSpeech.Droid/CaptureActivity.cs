@@ -5,7 +5,6 @@ using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Android.Speech.Tts;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
@@ -21,16 +20,20 @@ using Size = OpenCV.Core.Size;
 
 namespace GazeToSpeech.Droid
 {
+    /// <summary>
+    /// Author: Peter Brachwitz
+    /// </summary>
     [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
         ScreenOrientation = ScreenOrientation.Landscape)]
-    public class DetectActivity : Activity, CameraBridgeViewBase.ICvCameraViewListener2
+    public class CaptureActivity : Activity, CameraBridgeViewBase.ICvCameraViewListener2
     {
+
         #region properties
 
         #region public
 
-        public readonly DetectActivity Instance;
+        public readonly CaptureActivity Instance;
 
         public TextToSpeechHelper TextToSpeechHelper;
 
@@ -85,6 +88,22 @@ namespace GazeToSpeech.Droid
 
         #endregion
 
+        public CaptureActivity()
+        {
+            Instance = this;
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager.DefaultDisplay.GetMetrics(metrics);
+
+            _height = metrics.HeightPixels;
+            _width = metrics.WidthPixels;
+
+            TextToSpeechHelper = new TextToSpeechHelper(this);
+            var mDetectorName = new string[2];
+            mDetectorName[JavaDetector] = "Java";
+            mDetectorName[NativeDetector] = "Native (tracking)";
+        }
+
         #region overrides
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -134,7 +153,7 @@ namespace GazeToSpeech.Droid
 
         #endregion
 
-        #region implementation
+        #region ICvCameraViewListener2 implementation
 
         public void OnCameraViewStarted(int width, int height)
         {
@@ -211,9 +230,11 @@ namespace GazeToSpeech.Droid
         }
         #endregion
 
+        #region custom methods
+
         public void HandleEyePosition(Point position, bool eyesAreClosed)
         {
-            var rect = new Rectangle(0, 0, 100 , 100);
+            var rect = new Rectangle(0, 0, 100, 100);
             if (rect.Contains((int)position.X, (int)position.Y))
             {
                 if (CharacterBuffer.Count < "peter".Length)
@@ -245,22 +266,6 @@ namespace GazeToSpeech.Droid
             }
         }
 
-        public DetectActivity()
-        {
-            Instance = this;
-
-            DisplayMetrics metrics = new DisplayMetrics();
-            WindowManager.DefaultDisplay.GetMetrics(metrics);
-
-            _height = metrics.HeightPixels;
-            _width = metrics.WidthPixels;
-
-            TextToSpeechHelper = new TextToSpeechHelper(this);
-            var mDetectorName = new string[2];
-            mDetectorName[JavaDetector] = "Java";
-            mDetectorName[NativeDetector] = "Native (tracking)";
-        }
-
         private void DetermineFps()
         {
             if (_framesPerSecond > 0)
@@ -278,16 +283,12 @@ namespace GazeToSpeech.Droid
 
         private bool ShouldAct()
         {
-            if (_fpsDetermined)
-            {
-                //if(_framecount % _framesPerSecond == 0)
-                if (_framecount >= _framesPerSecond)
-                {
-                    _framecount = 0;
-                    return true;
-                }
-            }
+            if (_fpsDetermined && _framecount >= _framesPerSecond)
+                return (_framecount = 0) == 0;
+            
             return false;
         }
+
+        #endregion  
     }
 }

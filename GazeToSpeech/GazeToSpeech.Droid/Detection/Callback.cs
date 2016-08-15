@@ -8,9 +8,9 @@ namespace GazeToSpeech.Droid.Detection
 {
     internal class Callback : BaseLoaderCallback
     {
-        private readonly DetectActivity _activity;
+        private readonly CaptureActivity _activity;
         private readonly CameraBridgeViewBase mOpenCvCameraView;
-        public Callback(DetectActivity activity, CameraBridgeViewBase view)
+        public Callback(CaptureActivity activity, CameraBridgeViewBase view)
             : base(activity)
         {
             _activity = activity;

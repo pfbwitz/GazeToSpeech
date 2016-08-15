@@ -1,6 +1,6 @@
 ﻿namespace GazeToSpeech
 {
-    public interface ICaptureHelper
+    public interface IOpenCvEngine
     {
         void Open(int facing);
     }

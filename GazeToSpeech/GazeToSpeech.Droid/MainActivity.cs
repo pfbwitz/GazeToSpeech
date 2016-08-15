@@ -11,7 +11,6 @@ namespace GazeToSpeech.Droid
     {
         protected override void OnCreate(Bundle bundle)
         {
-
             base.OnCreate(bundle);
             Window.AddFlags(WindowManagerFlags.KeepScreenOn);
             Window.AddFlags(WindowManagerFlags.Fullscreen);
@@ -19,18 +18,6 @@ namespace GazeToSpeech.Droid
             Xamarin.Forms.Forms.Init(this, bundle);
             LoadApplication(new App());
         }
-
-        //public override bool OnOptionsItemSelected(IMenuItem item)
-        //{
-         
-        //    if (item.ItemId == 16908332)
-        //    {
-        //        App.Reset();
-        //        return true;
-        //    }
-
-        //    return base.OnOptionsItemSelected(item);
-        //}
     }
 }
 
