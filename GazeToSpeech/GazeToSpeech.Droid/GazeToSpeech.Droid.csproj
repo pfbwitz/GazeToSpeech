@@ -25,7 +25,7 @@
     <JavaOptions />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
@@ -34,6 +34,12 @@
     <WarningLevel>4</WarningLevel>
     <AndroidUseSharedRuntime>True</AndroidUseSharedRuntime>
     <AndroidLinkMode>None</AndroidLinkMode>
+    <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+    <BundleAssemblies>False</BundleAssemblies>
+    <AndroidCreatePackagePerAbi>False</AndroidCreatePackagePerAbi>
+    <JavaMaximumHeapSize>1G</JavaMaximumHeapSize>
+    <Debugger>Xamarin</Debugger>
+    <AndroidEnableMultiDex>False</AndroidEnableMultiDex>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -99,19 +105,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CaptureHelper.cs" />
-    <Compile Include="CapturePageRenderer.cs" />
-    <Compile Include="Common\DetectionHelper.cs" />
-    <Compile Include="Common\MatchingMethod.cs" />
-    <Compile Include="Common\TextHelper.cs" />
-    <Compile Include="Common\TextToSpeechHelper.cs" />
-    <Compile Include="Common\UntestedAttribute.cs" />
-    <Compile Include="DetectActivity.cs" />
-    <Compile Include="Detection\Callback.cs" />
-    <Compile Include="Detection\DetectionBasedTracker.cs" />
+    <Compile Include="CaptureMethod.cs" />
+    <Compile Include="NativeOpenCvEngine.cs" />
+    <Compile Include="Common\Helper\DetectionHelper.cs" />
+    <Compile Include="Common\Enum\MatchingMethod.cs" />
+    <Compile Include="Common\Helper\TextHelper.cs" />
+    <Compile Include="Common\Helper\TextToSpeechHelper.cs" />
+    <Compile Include="CaptureActivity.cs" />
+    <Compile Include="Engine\Callback.cs" />
+    <Compile Include="Engine\DetectionBasedTracker.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Common\Model\Subset.cs" />
+    <Compile Include="Common\Enum\SubsetPartition.cs" />
   </ItemGroup>
   <ItemGroup>
     <AndroidNativeLibrary Include="lib\arm64-v8a\libdetection_based_tracker.so" />
@@ -152,10 +159,10 @@
     <AndroidResource Include="Resources\raw\lbpcascade_frontalface.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Detection\jni\Android.mk" />
-    <Content Include="Detection\jni\Application.mk" />
-    <Content Include="Detection\jni\DetectionBasedTracker_jni.cpp" />
-    <Content Include="Detection\jni\DetectionBasedTracker_jni.h" />
+    <Content Include="Engine\jni\Android.mk" />
+    <Content Include="Engine\jni\Application.mk" />
+    <Content Include="Engine\jni\DetectionBasedTracker_jni.cpp" />
+    <Content Include="Engine\jni\DetectionBasedTracker_jni.h" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />

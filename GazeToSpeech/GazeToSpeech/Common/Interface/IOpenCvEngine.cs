@@ -1,4 +1,4 @@
-﻿namespace GazeToSpeech
+﻿namespace GazeToSpeech.Common.Interface
 {
     public interface IOpenCvEngine
     {

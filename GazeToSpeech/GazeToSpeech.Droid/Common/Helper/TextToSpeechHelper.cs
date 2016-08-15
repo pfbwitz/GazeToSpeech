@@ -1,9 +1,8 @@
-using Android.Speech.Tts;
-using Xamarin.Forms;
 using System.Collections.Generic;
 using Android.Content;
+using Android.Speech.Tts;
 
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech.Droid.Common.Helper
 {
     public class TextToSpeechHelper : Java.Lang.Object, TextToSpeech.IOnInitListener
     {

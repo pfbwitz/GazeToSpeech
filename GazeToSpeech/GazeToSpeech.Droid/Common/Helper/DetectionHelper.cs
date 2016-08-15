@@ -5,12 +5,10 @@ using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
 
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech.Droid.Common.Helper
 {
     public static class DetectionHelper
     {
-        private static int _blinkCount;
-
         public static Point GetAvgEyePoint(this CaptureActivity activity)
         {
             var avgXpos = 0;
@@ -35,25 +33,8 @@ namespace GazeToSpeech.Droid.Common
                     avgXpos = avgXpos / 2;
                     avgYpos = avgYpos / 2;
                 }
-
             }
             return new Point(avgXpos, avgYpos);
-        }
-
-        public static bool EyesAreClosed(bool pupilFoundLeft, bool pupilFoundRight)
-        {
-            var retVal = false;
-            if (!pupilFoundLeft && !pupilFoundRight)
-            {
-                _blinkCount++;
-                if (_blinkCount <= 20)
-                    return false;
-                _blinkCount = 0;
-                retVal = true;
-            }
-            else
-                _blinkCount = 0;
-            return retVal;
         }
 
         public static Rect GetNearestFace(IEnumerable<Rect> faces)
@@ -118,14 +99,15 @@ namespace GazeToSpeech.Droid.Common
                 Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
                    new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
 
-                var x = ((iris.X - eyeOnlyRectangle.X) / eyeOnlyRectangle.Width) * 100;
-                var y = ((iris.Y - eyeOnlyRectangle.Y) / eyeOnlyRectangle.Height) * 100;
+                var x = (mmG.MinLoc.X / eyeOnlyRectangle.Width) * 100;
+                var y = (mmG.MinLoc.Y / eyeOnlyRectangle.Height) * 100;
 
                 try
                 {
                     if (isLefteye)
                     {
-
+                        var absolute = new Point(x/100*App.Width, y/100*App.Height);
+                        Imgproc.Circle(activity.MRgba, absolute, 10, new Scalar(0, 255, 0), 2);
                         activity.PosLeft = new Point(x, y);
                         activity.PutOutlinedText("X: " + (int)activity.PosLeft.X + " Y: " + (int)activity.PosLeft.Y, (int)(iris.X + 10),
                             (int)(iris.Y + 30));
@@ -174,33 +156,5 @@ namespace GazeToSpeech.Droid.Common
         {
             return activity.DetectEye(clasificator, area, size, false, out pupilFound);
         }
-
-        //private static int _eyeClosed;
-        //[Untested("Untested")]
-        //public static bool DetectBlink(this DetectActivity activity, Rect area, Mat mTemplate)
-        //{
-        //    Mat mROI = activity.MGray.Submat(area);
-        //    var resultCols = mROI.Cols() - mTemplate.Cols() + 1;
-        //    var resultRows = mROI.Rows() - mTemplate.Rows() + 1;
-        //    // Check for bad template size
-        //    if (mTemplate.Cols() == 0 || mTemplate.Rows() == 0)
-        //        return false;
-
-        //    Mat mResult = new Mat(resultCols, resultRows, CvType.Cv8u);
-
-        //    Imgproc.MatchTemplate(mROI, mTemplate, mResult,
-        //                  Imgproc.TmSqdiffNormed);
-
-        //    var mmres = Core.MinMaxLoc(mResult);
-
-        //    if (mmres.MinVal < 0)
-        //        _eyeClosed = _eyeClosed + 1;
-        //    if (_eyeClosed == 10)
-        //    {
-        //        _eyeClosed = 0;
-        //        return true;
-        //    }
-        //    return false;
-        //}
     }
 }

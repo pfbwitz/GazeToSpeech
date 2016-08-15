@@ -4,7 +4,7 @@ using Java.Lang;
 using OpenCV.Android;
 using OpenCV.ObjDetect;
 
-namespace GazeToSpeech.Droid.Detection
+namespace GazeToSpeech.Droid.Engine
 {
     internal class Callback : BaseLoaderCallback
     {

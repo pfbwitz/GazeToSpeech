@@ -2,7 +2,7 @@ using Android.Widget;
 using OpenCV.Core;
 using OpenCV.ImgProc;
 
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech.Droid.Common.Helper
 {
     public static class TextHelper
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Xamarin.Forms;
 
-namespace GazeToSpeech
+namespace GazeToSpeech.Pages
 {
     public class HomePage : MasterDetailPage
     {

@@ -2,6 +2,7 @@
 using Android.Content.PM;
 using Android.Views;
 using Android.OS;
+using Android.Util;
 
 namespace GazeToSpeech.Droid
 {
@@ -14,6 +15,12 @@ namespace GazeToSpeech.Droid
             base.OnCreate(bundle);
             Window.AddFlags(WindowManagerFlags.KeepScreenOn);
             Window.AddFlags(WindowManagerFlags.Fullscreen);
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager.DefaultDisplay.GetMetrics(metrics);
+
+            App.Height = metrics.HeightPixels;
+            App.Width = metrics.WidthPixels;
 
             Xamarin.Forms.Forms.Init(this, bundle);
             LoadApplication(new App());

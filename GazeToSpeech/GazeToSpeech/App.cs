@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel;
-using System.Text;
-
+using GazeToSpeech.Pages;
 using Xamarin.Forms;
 
 namespace GazeToSpeech
@@ -11,6 +7,9 @@ namespace GazeToSpeech
     public class App : Application
     {
         public static App Instance;
+
+        public static int Width;
+        public static int Height;
 
         public App()
         {
@@ -25,17 +24,6 @@ namespace GazeToSpeech
 
         public void Load()
         {
-            //var cp = new ContentPage();
-
-
-            //var button = new Button() { Text = "Open Camera" };
-            //button.Clicked += (s, a) => cp.Navigation.PushAsync(new CapturePage());
-            //cp.Content = button;
-            //var nav = new NavigationPage(cp);
-            //nav.Popped += (sender, args) =>
-            //{
-            //    var t = args;
-            //};
             MainPage = GetMainPage();
         }
 
@@ -50,21 +38,6 @@ namespace GazeToSpeech
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
-
-        protected override void OnStart()
-        {
-            // Handle when your app starts
-        }
-
-        protected override void OnSleep()
-        {
-            // Handle when your app sleeps
-        }
-
-        protected override void OnResume()
-        {
-            // Handle when your app resumes
         }
     }
 }

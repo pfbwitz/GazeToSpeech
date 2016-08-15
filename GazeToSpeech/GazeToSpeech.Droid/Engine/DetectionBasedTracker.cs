@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Android.Runtime;
 using OpenCV.Core;
 
-namespace GazeToSpeech.Droid.Detection
+namespace GazeToSpeech.Droid.Engine
 {
     public class DetectionBasedTracker
     {
