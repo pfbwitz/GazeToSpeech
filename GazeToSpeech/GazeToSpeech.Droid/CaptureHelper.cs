@@ -8,11 +8,12 @@ namespace GazeToSpeech.Droid
 {
     public class CaptureHelper : ICaptureHelper
     {
-        public void Open()
+        public void Open(int facing)
         {
             var activity = (Activity)Forms.Context;
 
             var intent = new Intent(activity, typeof(DetectActivity));
+            intent.PutExtra(typeof(CameraFacing).Name, facing);
             activity.StartActivityForResult(intent, 0);
         }
     }

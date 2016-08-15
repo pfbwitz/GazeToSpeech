@@ -1,4 +1,4 @@
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech
 {
     public class CameraFacing
     {

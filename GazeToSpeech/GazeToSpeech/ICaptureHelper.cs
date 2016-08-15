@@ -2,6 +2,6 @@
 {
     public interface ICaptureHelper
     {
-        void Open();
+        void Open(int facing);
     }
 }

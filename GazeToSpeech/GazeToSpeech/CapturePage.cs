@@ -6,10 +6,13 @@ namespace GazeToSpeech
     {
         public CapturePage()
         {
-            var button = new Button(){Text="Start Capture"};
-            button.Clicked += (s, a) => DependencyService.Get<ICaptureHelper>().Open();
+            var button = new Button(){Text="Start Backfacing Camera Capture"};
+            button.Clicked += (s, a) => DependencyService.Get<ICaptureHelper>().Open(CameraFacing.Back);
 
-            Content = button;
+            var button2 = new Button() { Text = "Start Front Facing Camera" };
+            button2.Clicked += (s, a) => DependencyService.Get<ICaptureHelper>().Open(CameraFacing.Front);
+
+            Content = new StackLayout() { Children = { button, button2 } };
         }
     }
 }

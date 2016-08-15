@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
 using Android.Speech.Tts;
+using Android.Util;
 using Android.Views;
 using Android.Widget;
 using GazeToSpeech.Droid.Common;
@@ -14,6 +16,7 @@ using OpenCV.Android;
 using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
+using Point = OpenCV.Core.Point;
 using Size = OpenCV.Core.Size;
 
 namespace GazeToSpeech.Droid
@@ -26,6 +29,8 @@ namespace GazeToSpeech.Droid
         #region properties
 
         #region public
+
+        public readonly DetectActivity Instance;
 
         public TextToSpeechHelper TextToSpeechHelper;
 
@@ -54,7 +59,9 @@ namespace GazeToSpeech.Droid
 
         #region private
 
-        public readonly DetectActivity Instance;
+        private int _height;
+
+        private int _width;
 
         private bool _fpsDetermined;
 
@@ -92,7 +99,8 @@ namespace GazeToSpeech.Droid
             _mOpenCvCameraView = FindViewById<CameraBridgeViewBase>(Resource.Id.fd_activity_surface_view);
             _mOpenCvCameraView.Visibility = ViewStates.Visible;
 
-            _mOpenCvCameraView.SetCameraIndex(CameraFacing.Front);
+            var facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
+            _mOpenCvCameraView.SetCameraIndex(facing);
             _mOpenCvCameraView.SetCvCameraViewListener2(this);
 
             TextView1 = FindViewById<TextView>(Resource.Id.tv1);
@@ -205,37 +213,48 @@ namespace GazeToSpeech.Droid
 
         public void HandleEyePosition(Point position, bool eyesAreClosed)
         {
-            if (CharacterBuffer.Count < "peter".Length)
+            var rect = new Rectangle(0, 0, 100 , 100);
+            if (rect.Contains((int)position.X, (int)position.Y))
             {
-                switch (CharacterBuffer.Count)
+                if (CharacterBuffer.Count < "peter".Length)
                 {
-                    case 0:
-                        CharacterBuffer.Add("p");
-                        break;
-                         case 1:
-                        CharacterBuffer.Add("e");
-                        break;
-                         case 2:
-                        CharacterBuffer.Add("t");
-                        break;
-                         case 3:
-                        CharacterBuffer.Add("e");
-                        break;
+                    switch (CharacterBuffer.Count)
+                    {
+                        case 0:
+                            CharacterBuffer.Add("p");
+                            break;
+                        case 1:
+                            CharacterBuffer.Add("e");
+                            break;
+                        case 2:
+                            CharacterBuffer.Add("t");
+                            break;
+                        case 3:
+                            CharacterBuffer.Add("e");
+                            break;
                         case 4:
-                        CharacterBuffer.Add("r");
-                        break;
+                            CharacterBuffer.Add("r");
+                            break;
 
+                    }
+                    TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                    return;
                 }
-                TextToSpeechHelper.Speak(CharacterBuffer.Last());
-                return;
+                TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
+                CharacterBuffer.Clear();
             }
-            TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
-            CharacterBuffer.Clear();
         }
 
         public DetectActivity()
         {
             Instance = this;
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager.DefaultDisplay.GetMetrics(metrics);
+
+            _height = metrics.HeightPixels;
+            _width = metrics.WidthPixels;
+
             TextToSpeechHelper = new TextToSpeechHelper(this);
             var mDetectorName = new string[2];
             mDetectorName[JavaDetector] = "Java";

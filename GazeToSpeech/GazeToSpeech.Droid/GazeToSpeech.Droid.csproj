@@ -99,10 +99,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CaptureFragment.cs" />
     <Compile Include="CaptureHelper.cs" />
     <Compile Include="CapturePageRenderer.cs" />
-    <Compile Include="Common\CameraFacing.cs" />
     <Compile Include="Common\DetectionHelper.cs" />
     <Compile Include="Common\MatchingMethod.cs" />
     <Compile Include="Common\TextHelper.cs" />

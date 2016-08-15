@@ -35,9 +35,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="CameraFacing.cs" />
     <Compile Include="CapturePage.cs" />
     <Compile Include="HomePage.cs" />
     <Compile Include="ICaptureHelper.cs" />
+    <Compile Include="PositionHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
