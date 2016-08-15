@@ -5,11 +5,12 @@ using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using GazeToSpeech.Droid.Common;
-using GazeToSpeech.Droid.Detection;
+using GazeToSpeech.Droid.Common.Helper;
+using GazeToSpeech.Droid.Common.Model;
+using GazeToSpeech.Droid.Engine;
 using Java.IO;
 using OpenCV.Android;
 using OpenCV.Core;
@@ -21,7 +22,11 @@ using Size = OpenCV.Core.Size;
 namespace GazeToSpeech.Droid
 {
     /// <summary>
-    /// Author: Peter Brachwitz
+    /// App name:       Gaze to Speech
+    /// Description:    Mobile application for communication of ALS patients
+    ///                 or other disabled individuals, in particular Jason Becker
+    /// Author:         Peter Brachwitz
+    /// Last Update:    August 15 2016
     /// </summary>
     [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
@@ -62,9 +67,13 @@ namespace GazeToSpeech.Droid
 
         #region private
 
-        private int _height;
+        private int _seconds = 2;
 
-        private int _width;
+        private CaptureMethod _captureMethod;
+        private Subset _currentSubset;
+        private List<Subset> _subSets;
+
+        private bool _handling;
 
         private bool _fpsDetermined;
 
@@ -82,8 +91,6 @@ namespace GazeToSpeech.Droid
 
         private Callback _mLoaderCallback;
 
-
-
         #endregion
 
         #endregion
@@ -92,12 +99,9 @@ namespace GazeToSpeech.Droid
         {
             Instance = this;
 
-            DisplayMetrics metrics = new DisplayMetrics();
-            WindowManager.DefaultDisplay.GetMetrics(metrics);
-
-            _height = metrics.HeightPixels;
-            _width = metrics.WidthPixels;
-
+            CreateGridSubSet();
+            _captureMethod = CaptureMethod.Subset;
+            
             TextToSpeechHelper = new TextToSpeechHelper(this);
             var mDetectorName = new string[2];
             mDetectorName[JavaDetector] = "Java";
@@ -201,6 +205,7 @@ namespace GazeToSpeech.Droid
 
             if (face != null)
             {
+                _handling = true;
                 Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255), 3);
 
                 var eyeareaRight = new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
@@ -215,13 +220,12 @@ namespace GazeToSpeech.Droid
                 bool pupilFoundLeft;
                 this.DetectRightEye(MJavaDetectorEye, eyeareaRight, 24, out pupilFoundRight);
                 this.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, 24, out pupilFoundLeft);
-                var eyesAreClosed = DetectionHelper.EyesAreClosed(pupilFoundLeft, pupilFoundRight);
                 var avgPos = this.GetAvgEyePoint();
 
                 RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
 
                 if (ShouldAct())
-                    RunOnUiThread(() => HandleEyePosition(avgPos, eyesAreClosed));
+                    RunOnUiThread(() => HandleEyePosition(PosLeft ?? PosRight));
             }
             else
                 RunOnUiThread(() => this.PutText(new[] { TextView1, TextView2, Textview3 }, string.Empty));
@@ -232,43 +236,98 @@ namespace GazeToSpeech.Droid
 
         #region custom methods
 
-        public void HandleEyePosition(Point position, bool eyesAreClosed)
+        /// <summary>
+        /// Create the grid of character-areas, so that the position of the pupil can be mapped to 
+        /// a subset of characters. Subsequently, the next measured position can be mapped to a single 
+        /// letter in the subset or the end of a word
+        /// </summary>
+        private void CreateGridSubSet()
         {
-            var rect = new Rectangle(0, 0, 100, 100);
-            if (rect.Contains((int)position.X, (int)position.Y))
-            {
-                if (CharacterBuffer.Count < "peter".Length)
-                {
-                    switch (CharacterBuffer.Count)
-                    {
-                        case 0:
-                            CharacterBuffer.Add("p");
-                            break;
-                        case 1:
-                            CharacterBuffer.Add("e");
-                            break;
-                        case 2:
-                            CharacterBuffer.Add("t");
-                            break;
-                        case 3:
-                            CharacterBuffer.Add("e");
-                            break;
-                        case 4:
-                            CharacterBuffer.Add("r");
-                            break;
+            var vwxyz = SubsetPartition.OPQRSTY.ToString().ToCharArray().ToList();
+            vwxyz.Add('_');
 
-                    }
-                    TextToSpeechHelper.Speak(CharacterBuffer.Last());
-                    return;
+            _subSets = new List<Subset>
+            {
+                new Subset
+                {
+                    Partition = SubsetPartition.ABCDEFG,
+                    Coordinate = new Rectangle(0, 0, 50, 50),
+                    Characters = SubsetPartition.ABCDEFG.ToString().ToCharArray().ToList()
+                },
+                new Subset
+                {
+                    Partition = SubsetPartition.HIJKLMN,
+                    Coordinate = new Rectangle(50, 0, 50, 50),
+                    Characters = SubsetPartition.HIJKLMN.ToString().ToCharArray().ToList()
+                },
+                new Subset
+                {
+                    Partition = SubsetPartition.VWXYZ,
+                    Coordinate = new Rectangle(50, 50, 50, 50),
+                    Characters = SubsetPartition.VWXYZ.ToString().ToCharArray().ToList()
+                },
+                new Subset
+                {
+                    Partition = SubsetPartition.OPQRSTY,
+                    Coordinate = new Rectangle(0, 50, 50, 50),
+                    Characters = vwxyz
                 }
+            };
+        }
+        
+        /// <summary>
+        /// Handle calculated position of the pupil compared to the surface of the entire eye
+        /// </summary>
+        /// <param name="position"></param>
+        public void HandleEyePosition(Point position)
+        {
+            if (position == null || _handling)
+                return;
+
+            if (_captureMethod == CaptureMethod.Subset)
+            {
+                _currentSubset =_subSets.SingleOrDefault(subset => 
+                    subset.Coordinate.Contains((int) position.X, (int) position.Y));
+
+                if (_currentSubset == null)
+                    return;
+
+                TextToSpeechHelper.Speak(_currentSubset.Partition.ToString());
+            }
+            else if (_captureMethod == CaptureMethod.Character)
+            {
+                _captureMethod = CaptureMethod.Subset;
+
+                switch (_currentSubset.Partition)
+                {
+                    case SubsetPartition.ABCDEFG:
+                        break;
+                    case SubsetPartition.HIJKLMN:
+                        break;
+                    case SubsetPartition.OPQRSTY:
+                        break;
+                    case SubsetPartition.VWXYZ:
+                        break;
+                }
+
+                CharacterBuffer.Add("P");
+                TextToSpeechHelper.Speak(CharacterBuffer.Last());
+            }
+            else if (_captureMethod == CaptureMethod.Word)
+            {
                 TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
                 CharacterBuffer.Clear();
             }
+
+            _handling = false;
         }
 
+        /// <summary>
+        /// Determines the amount of processed frames per second
+        /// </summary>
         private void DetermineFps()
         {
-            if (_framesPerSecond > 0)
+            if (_fpsDetermined)
                 return;
 
             var now = DateTime.Now;
@@ -281,12 +340,15 @@ namespace GazeToSpeech.Droid
             }
         }
 
+        /// <summary>
+        /// Should action be taken with the processed frame
+        /// </summary>
+        /// <returns>bool</returns>
         private bool ShouldAct()
         {
-            if (_fpsDetermined && _framecount >= _framesPerSecond)
-                return (_framecount = 0) == 0;
-            
-            return false;
+            return _fpsDetermined && 
+                _framecount >= _framesPerSecond * _seconds && 
+                ((_framecount = 0) == 0);
         }
 
         #endregion  
