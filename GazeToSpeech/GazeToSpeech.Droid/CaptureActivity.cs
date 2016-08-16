@@ -88,6 +88,9 @@ namespace GazeToSpeech.Droid
 
         #region private
 
+        private Mat _templateR;
+        private Mat _templateL;
+
         private int _seconds = 2;
 
         private CaptureMethod _captureMethod;
@@ -181,8 +184,6 @@ namespace GazeToSpeech.Droid
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
-           
-
             _framecount++;
             PosLeft = PosRight = null;
 
@@ -230,6 +231,18 @@ namespace GazeToSpeech.Droid
                 var eyeareaLeft = new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
                     (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
 
+                //if (DetectionHelper.Learned < 5)
+                //{
+                //    _templateR = this.GetTemplate(MJavaDetectorEye, eyeareaLeft, 24);
+                //    _templateL = this.GetTemplate(MJavaDetectorEye, eyeareaLeft, 24);
+                //    DetectionHelper.Learned++;
+                //}
+                //else
+                //{
+                //    this.MatchEye(eyeareaRight, _templateR, DetectionHelper.TmSqdiffNormed);
+                //    this.MatchEye(eyeareaLeft, _templateL, DetectionHelper.TmSqdiffNormed);
+                //}
+
                 Imgproc.Rectangle(MRgba, eyeareaLeft.Tl(), eyeareaLeft.Br(), new Scalar(255, 0, 0, 255), 2);
                 Imgproc.Rectangle(MRgba, eyeareaRight.Tl(), eyeareaRight.Br(), new Scalar(255, 0, 0, 255), 2);
 
@@ -241,7 +254,7 @@ namespace GazeToSpeech.Droid
 
                 RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
 
-                Imgproc.Circle(MRgba, new Point(((avgPos.X/100)*w),(avgPos.Y/100)*h), 15, new Scalar(0, 255, 0), 2);
+                Imgproc.Circle(MRgba, new Point(((avgPos.X / 100) * w), (avgPos.Y / 100) * h), 15, new Scalar(0, 255, 0), 2);
 
                 if (ShouldAct())
                     RunOnUiThread(() => HandleEyePosition(avgPos));
@@ -255,6 +268,9 @@ namespace GazeToSpeech.Droid
 
         #region custom methods
 
+        /// <summary>
+        /// Draw the full character-grid on screen
+        /// </summary>
         private void PopulateGrid()
         {
             var scalar = new Scalar(0, 255, 0);
@@ -459,9 +475,12 @@ namespace GazeToSpeech.Droid
         /// <returns>bool</returns>
         private bool ShouldAct()
         {
-            return _fpsDetermined && 
-                _framecount >= _framesPerSecond * _seconds && 
-                ((_framecount = 0) == 0);
+            if (_fpsDetermined && _framecount >= _framesPerSecond)
+            {
+                _framecount = 0;
+                return true;
+            }
+            return false;
         }
 
         #endregion  

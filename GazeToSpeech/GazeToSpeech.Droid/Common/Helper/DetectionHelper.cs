@@ -9,6 +9,15 @@ namespace GazeToSpeech.Droid.Common.Helper
 {
     public static class DetectionHelper
     {
+        public const int JavaDetector = 0;
+        public const int TmSqdiff = 0;
+        public const int TmSqdiffNormed = 1;
+        public const int TmCcoeff = 2;
+        public const int TmCcoeffNormed = 3;
+        public const int TmCcorr = 4;
+        public const int TmCcorrNormed = 5;
+        public static int Learned = 0;
+
         public static Point GetAvgEyePoint(this CaptureActivity activity)
         {
             var avgXpos = 0;
@@ -47,6 +56,11 @@ namespace GazeToSpeech.Droid.Common.Helper
             }
             return face;
         }
+
+        private static List<Point> _leftPupils = new List<Point>();
+        private static List<Point> _rightPupils = new List<Point>();
+        private static int _drawCountLeft = 0;
+        private static int _drawCountRight = 0;
 
         public static Mat DetectEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size, bool isLefteye, out bool pupilFound)
         {
@@ -111,10 +125,40 @@ namespace GazeToSpeech.Droid.Common.Helper
                 Imgproc.Rectangle(activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(),
                     new Scalar(255, 255, 255), 2);
 
-                Imgproc.Circle(vyrez, mmG.MinLoc, 10, new Scalar(255, 255, 255), 2);
-                Imgproc.Circle(vyrez, mmG.MinLoc, 4, new Scalar(255, 255, 255), 2);
-                Imgproc.Circle(vyrez, mmG.MinLoc, 3, new Scalar(255, 255, 255), 2);
+                if (isLefteye)
+                    _leftPupils.Add(mmG.MinLoc);
+                else
+                    _rightPupils.Add(mmG.MinLoc);
 
+                Point avg = mmG.MinLoc;
+                var frameSkip = 20;
+                if (isLefteye && _leftPupils.Count >= frameSkip)
+                {
+                    _drawCountLeft++;
+                    avg = new Point(_leftPupils.Average(p => p.X), _leftPupils.Average(p => p.Y));
+
+                    if (_drawCountLeft >= frameSkip)
+                    {
+                        _drawCountLeft = 0;
+                        _leftPupils.Clear();
+                    }
+                }
+                else if (_rightPupils.Count >= frameSkip)
+                {
+                    _drawCountRight++;
+                    avg = new Point(_rightPupils.Average(p => p.X), _rightPupils.Average(p => p.Y));
+
+                    if (_drawCountRight >= frameSkip)
+                    {
+                        _drawCountRight = 0;
+                        _rightPupils.Clear();
+                    }
+                }
+
+                Imgproc.Circle(vyrez, avg, 10, new Scalar(255, 255, 255), 2);
+                Imgproc.Circle(vyrez, avg, 4, new Scalar(255, 255, 255), 2);
+                Imgproc.Circle(vyrez, avg, 3, new Scalar(255, 255, 255), 2);
+               
                 iris.X = mmG.MinLoc.X + eyeOnlyRectangle.X;
                 iris.Y = mmG.MaxLoc.Y + eyeOnlyRectangle.Y;
 
@@ -130,8 +174,8 @@ namespace GazeToSpeech.Droid.Common.Helper
                 //Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
                 //   new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
 
-                var x = (mmG.MinLoc.X / eyeOnlyRectangle.Width) * 100;
-                var y = (mmG.MinLoc.Y / eyeOnlyRectangle.Height) * 100;
+                var x = (avg.X / eyeOnlyRectangle.Width) * 100;
+                var y = (avg.Y / eyeOnlyRectangle.Height) * 100;
 
                 try
                 {
@@ -174,6 +218,99 @@ namespace GazeToSpeech.Droid.Common.Helper
                 return template;
             }
             return template;
+        }
+
+        public static Mat GetTemplate(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size)
+        {
+            Mat template = new Mat();
+            Mat mRoi = activity.MGray.Submat(area);
+            MatOfRect eyes = new MatOfRect();
+            Point iris = new Point();
+            clasificator.DetectMultiScale(mRoi, eyes, 1.15, 2,
+                    Objdetect.CascadeFindBiggestObject
+                            | Objdetect.CascadeScaleImage, new Size(30, 30),
+                    new Size());
+
+            Rect[] eyesArray = eyes.ToArray();
+            for (int i = 0; i < eyesArray.Length; )
+            {
+                var e = eyesArray[i];
+                e.X = area.X + e.X;
+                e.Y = area.Y + e.Y;
+                var eyeOnlyRectangle = new Rect((int)e.Tl().X,
+                        (int)(e.Tl().Y + e.Height * 0.4), (int)e.Width,
+                        (int)(e.Height * 0.6));
+                mRoi = activity.MGray.Submat(eyeOnlyRectangle);
+                var vyrez = activity.MRgba.Submat(eyeOnlyRectangle);
+
+
+                var mmG = Core.MinMaxLoc(mRoi);
+
+                Imgproc.Circle(vyrez, mmG.MinLoc, 2, new Scalar(255, 255, 255, 255), 2);
+                iris.X = mmG.MinLoc.X + eyeOnlyRectangle.X;
+                iris.Y = mmG.MinLoc.Y + eyeOnlyRectangle.Y;
+                var eyeTemplate = new Rect((int)iris.X - size / 2, (int)iris.Y
+                                                                     - size / 2, size, size);
+                Imgproc.Rectangle(activity.MRgba, eyeTemplate.Tl(), eyeTemplate.Br(),
+                        new Scalar(255, 0, 0, 255), 2);
+                template = (activity.MGray.Submat(eyeTemplate)).Clone();
+                return template;
+            }
+            return template;
+        } 
+
+        public static void MatchEye(this CaptureActivity activity, Rect area, Mat mTemplate, int type)
+        {
+            Point matchLoc;
+            var mROI = activity.MGray.Submat(area);
+            int resultCols = mROI.Cols() - mTemplate.Cols() + 1;
+            int resultRows = mROI.Rows() - mTemplate.Rows() + 1;
+            // Check for bad template size
+            if (mTemplate.Cols() == 0 || mTemplate.Rows() == 0)
+            {
+                return;
+            }
+            var mResult = new Mat(resultCols, resultRows, CvType.Cv8u);
+
+            switch (type)
+            {
+                case TmSqdiff:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmSqdiff);
+                    break;
+                case TmSqdiffNormed:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmSqdiffNormed);
+                    break;
+                case TmCcoeff:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmCcoeff);
+                    break;
+                case TmCcoeffNormed:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmCcoeffNormed);
+                    break;
+                case TmCcorr:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmCcorr);
+                    break;
+                case TmCcorrNormed:
+                    Imgproc.MatchTemplate(mROI, mTemplate, mResult, Imgproc.TmCcorrNormed);
+                    break;
+            }
+
+            var mmres = Core.MinMaxLoc(mResult);
+            // there is difference in matching methods - best match is max/min value
+            if (type == TmSqdiff || type == TmSqdiffNormed)
+                matchLoc = mmres.MinLoc;
+            else
+                matchLoc = mmres.MaxLoc;
+            
+
+            var matchLocTx = new Point(matchLoc.X + area.X, matchLoc.Y + area.Y);
+            var matchLocTy = new Point(matchLoc.X + mTemplate.Cols() + area.X,
+                    matchLoc.Y + mTemplate.Rows() + area.Y);
+
+            Imgproc.Rectangle(activity.MRgba, matchLocTx, matchLocTy, new Scalar(255, 255, 0,
+                    255));
+            var rec = new Rect(matchLocTx, matchLocTy);
+
+
         }
 
         public static void DrawAvgRectangles(this CaptureActivity activity, bool isLefteye, Rect area)
