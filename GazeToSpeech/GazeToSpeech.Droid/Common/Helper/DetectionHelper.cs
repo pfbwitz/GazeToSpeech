@@ -69,7 +69,7 @@ namespace GazeToSpeech.Droid.Common.Helper
                 var eye = eyesArray[i];
                 eye.X = area.X + eye.X;
                 eye.Y = area.Y + eye.Y;
-                Imgproc.Rectangle(activity.MRgba, eye.Tl(), eye.Br(), new Scalar(0, 255, 255), 3);
+                //Imgproc.Rectangle(activity.MRgba, eye.Tl(), eye.Br(), new Scalar(0, 255, 255), 3);
                 var eyeOnlyRectangle = new Rect((int)eye.Tl().X,
                         (int)(eye.Tl().Y + eye.Height * 0.4), eye.Width,
                         (int)(eye.Height * 0.6));
@@ -119,16 +119,16 @@ namespace GazeToSpeech.Droid.Common.Helper
                 iris.Y = mmG.MaxLoc.Y + eyeOnlyRectangle.Y;
 
                 //rect
-                Imgproc.Line(activity.MRgba, new Point(iris.X, area.Y),
-                new Point(iris.X, area.Y + area.Height), new Scalar(255, 0, 0));
-                Imgproc.Line(activity.MRgba, new Point(area.X, iris.Y),
-                   new Point(area.X + area.Width, iris.Y), new Scalar(255, 0, 0));
+                //Imgproc.Line(activity.MRgba, new Point(iris.X, area.Y),
+                //new Point(iris.X, area.Y + area.Height), new Scalar(255, 0, 0));
+                //Imgproc.Line(activity.MRgba, new Point(area.X, iris.Y),
+                //   new Point(area.X + area.Width, iris.Y), new Scalar(255, 0, 0));
 
                 //eye
-                Imgproc.Line(activity.MRgba, new Point(iris.X, eyeOnlyRectangle.Y),
-                    new Point(iris.X, eyeOnlyRectangle.Y + eyeOnlyRectangle.Height), new Scalar(255, 255, 255));
-                Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
-                   new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
+                //Imgproc.Line(activity.MRgba, new Point(iris.X, eyeOnlyRectangle.Y),
+                //    new Point(iris.X, eyeOnlyRectangle.Y + eyeOnlyRectangle.Height), new Scalar(255, 255, 255));
+                //Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
+                //   new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
 
                 var x = (mmG.MinLoc.X / eyeOnlyRectangle.Width) * 100;
                 var y = (mmG.MinLoc.Y / eyeOnlyRectangle.Height) * 100;
@@ -137,18 +137,6 @@ namespace GazeToSpeech.Droid.Common.Helper
                 {
                     if (isLefteye)
                     {
-                        //absolute positioning in screen
-                        foreach (var rect in activity.SubSets)
-                        {
-                            Imgproc.Rectangle(activity.MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
-                                new Point((rect.Coordinate.X + rect.Coordinate.Width),
-                                    (rect.Coordinate.Y + rect.Coordinate.Height)), new Scalar(0, 255, 0), 2);
-                        }
-                        Imgproc.Rectangle(activity.MRgba, new Point(0, 0), new Point(100, 100), new Scalar(0, 255, 0), 2);
-
-                        Imgproc.Circle(activity.MRgba, new Point(x, y),
-                            5, new Scalar(0, 255, 0), 2);
-
                         activity.PosLeft = new Point(x, y);
                         activity.PutOutlinedText("X: " + (int)activity.PosLeft.X + " Y: " + (int)activity.PosLeft.Y, (int)(iris.X + 10),
                             (int)(iris.Y + 30));

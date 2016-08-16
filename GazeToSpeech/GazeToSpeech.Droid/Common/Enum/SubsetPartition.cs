@@ -1,10 +1,12 @@
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech.Droid.Common.Enum
 {
     public enum SubsetPartition
     {
-        ABCDEFG,
-        HIJKLMN,
-        OPQRSTY,
-        VWXYZ
+        ABCD,
+        EFGH,
+        IJKL,
+        MNOP,
+        QRST,
+        UVWXYZ
     }
 }

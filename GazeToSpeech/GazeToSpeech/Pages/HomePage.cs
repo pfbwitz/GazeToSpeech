@@ -1,48 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using GazeToSpeech.Common;
 using Xamarin.Forms;
 
 namespace GazeToSpeech.Pages
 {
-    public class HomePage : MasterDetailPage
+    public class HomePage : CustomPage
     {
         public HomePage()
         {
-            Padding = new Thickness(0, Device.OnPlatform(20, 0, 0), 0, 0);
-            var list = new ListView
+            Title = TextResources.TtlHome;
+            var webview = new WebView
             {
-                ItemsSource = new List<string>
-                {
-                    "Empty",
-                   "Capture"
-                },
+                HorizontalOptions = LayoutOptions.FillAndExpand,
+                VerticalOptions = LayoutOptions.FillAndExpand,
+                Source = "http://jasonbeckerguitar.com/eye_communication.html"
             };
-            list.ItemSelected += (sender, args) =>
+            webview.Navigating += (sender, args) =>
             {
-                var t = args.SelectedItem.ToString();
-                if(t == "Empty")
-                    SetPage(GetEmpty());
-                else if (t == "Capture")
-                    SetPage(new CapturePage());
+                args.Cancel = true;
             };
-
-            Master = new ContentPage
-            {
-                Padding = new Thickness(0, Device.OnPlatform(20, 0, 0), 0, 0),
-                Title = "Menu",
-                Content = list,
-            };
-            Detail = GetEmpty();
-        }
-
-        public ContentPage GetEmpty()
-        {
-            return new ContentPage{Content = new Label(){ Text="EMPTY"}};
-        }
-
-        private void SetPage(ContentPage page)
-        {
-            Detail = page;
-            IsPresented = false;
+            Content = webview;
         }
     }
 }

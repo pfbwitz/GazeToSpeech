@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+
+
+  <style name="Theme.Splash" parent="android:Theme">
+    <item name="android:windowBackground">@drawable/splash</item>
+    <item name="android:windowNoTitle">true</item>
+  </style>
+  <style name="MyTheme" parent="android:Theme.Holo.Light">
+    <item name="android:icon">@android:color/transparent</item>
+    <item name="android:actionBarStyle">@style/MyTheme.ActionBarStyle</item>
+    <item name="android:actionMenuTextColor">@android:color/white</item>
+    <item name="android:textViewStyle">@style/MyTextViewStyle</item>
+    <item name="android:listViewStyle">@style/ListView</item>
+    <item name="android:icon">@android:color/transparent</item>
+    <item name="android:homeAsUpIndicator">@drawable/backbutton</item>
+  </style>
+  <style name="MyTextViewStyle" parent="android:Widget.TextView">
+    <item name="android:textColor">@color/my_purple</item>
+  </style>
+  <style name="MyTheme.ActionBarStyle" parent="@android:style/Widget.Holo.ActionBar">
+    <item name="android:titleTextStyle">@style/MyTheme.ActionBar.TitleTextStyle</item>
+    <item name="android:background">@color/actionBarBackgroundColor</item>
+    <item name="android:colorControlNormal">@color/my_white</item>
+  </style>
+  <style name="MyTheme.ActionBar.TitleTextStyle" parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title">
+    <item name="android:textColor">@color/actionBarTextColor</item>
+  </style>
+  <style name="ListView" parent="@android:style/Widget.ListView">
+    <item name="android:divider">@android:color/transparent</item>
+    <item name="android:dividerHeight">0dp</item>
+  </style>
+</resources>

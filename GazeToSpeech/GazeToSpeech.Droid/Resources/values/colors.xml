@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+  <color name="my_white">#ffffff</color>
+  <color name="my_purple">#006ac2</color>
+  <color name="actionBarBackgroundColor">#006ac2</color>
+  <color name="actionBarTextColor">#ffffff</color>
+</resources>

@@ -9,6 +9,7 @@ using Android.Views;
 using Android.Widget;
 using GazeToSpeech.Common.Enumeration;
 using GazeToSpeech.Droid.Common;
+using GazeToSpeech.Droid.Common.Enum;
 using GazeToSpeech.Droid.Common.Helper;
 using GazeToSpeech.Droid.Common.Model;
 using GazeToSpeech.Droid.Engine;
@@ -35,6 +36,17 @@ namespace GazeToSpeech.Droid
         ScreenOrientation = ScreenOrientation.Landscape)]
     public class CaptureActivity : Activity, CameraBridgeViewBase.ICvCameraViewListener2
     {
+        public CaptureActivity()
+        {
+            Instance = this;
+
+            _captureMethod = CaptureMethod.Subset;
+
+            TextToSpeechHelper = new TextToSpeechHelper(this);
+            var mDetectorName = new string[2];
+            mDetectorName[JavaDetector] = "Java";
+            mDetectorName[NativeDetector] = "Native (tracking)";
+        }
 
         #region properties
 
@@ -104,19 +116,6 @@ namespace GazeToSpeech.Droid
 
         #endregion
 
-        public CaptureActivity()
-        {
-            Instance = this;
-
-            CreateGridSubSet();
-            _captureMethod = CaptureMethod.Subset;
-            
-            TextToSpeechHelper = new TextToSpeechHelper(this);
-            var mDetectorName = new string[2];
-            mDetectorName[JavaDetector] = "Java";
-            mDetectorName[NativeDetector] = "Native (tracking)";
-        }
-
         #region overrides
 
         protected override void OnCreate(Bundle savedInstanceState)
@@ -182,6 +181,8 @@ namespace GazeToSpeech.Droid
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
+           
+
             _framecount++;
             PosLeft = PosRight = null;
 
@@ -191,6 +192,14 @@ namespace GazeToSpeech.Droid
 
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
+
+            var w = MRgba.Width();
+            var h = MRgba.Height();
+
+            if (SubSets == null)
+                CreateGridSubSet(w, h);
+
+            PopulateGrid();
 
             if (_mAbsoluteFaceSize == 0)
             {
@@ -214,7 +223,7 @@ namespace GazeToSpeech.Droid
 
             if (face != null)
             {
-                Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255), 3);
+                //Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255), 3);
 
                 var eyeareaRight = new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
                     (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
@@ -232,6 +241,8 @@ namespace GazeToSpeech.Droid
 
                 RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
 
+                Imgproc.Circle(MRgba, new Point(((avgPos.X/100)*w),(avgPos.Y/100)*h), 15, new Scalar(0, 255, 0), 2);
+
                 if (ShouldAct())
                     RunOnUiThread(() => HandleEyePosition(avgPos));
             }
@@ -244,42 +255,103 @@ namespace GazeToSpeech.Droid
 
         #region custom methods
 
+        private void PopulateGrid()
+        {
+            var scalar = new Scalar(0, 255, 0);
+            //absolute positioning in screen
+            foreach (var rect in SubSets)
+            {
+                var width = rect.Coordinate.Width / 3;
+                var height = rect.Coordinate.Height / 3;
+
+                var color = new Scalar(255, 255, 255, 50);
+                this.PutOutlinedText(rect.Characters[0].ToString(), rect.Coordinate.X + width / 2 - 25, 25 +
+                    rect.Coordinate.Y + rect.Coordinate.Height / 2, 5, color); //A E I M Q U
+
+                this.PutOutlinedText(rect.Characters[2].ToString(), rect.Coordinate.X + rect.Coordinate.Width - width / 2 - 25, 25 +
+                   rect.Coordinate.Y + rect.Coordinate.Height / 2, 5, color); //C G K O S W
+
+                this.PutOutlinedText(rect.Characters[1].ToString(), rect.Coordinate.X + rect.Coordinate.Width / 2 - 10,
+                  rect.Coordinate.Y + height / 2, 5, color); //B
+
+                this.PutOutlinedText(rect.Characters[3].ToString(), rect.Coordinate.X + rect.Coordinate.Width / 2 - 10,
+                rect.Coordinate.Y + rect.Coordinate.Height - height/2, 5, color); //D H L P T X
+
+                if (rect.Characters.Count == 6)
+                {
+                    this.PutOutlinedText(rect.Characters[4].ToString(), rect.Coordinate.X + width / 2 - 25,
+                       rect.Coordinate.Y + rect.Coordinate.Height - 10, 5, color); //Y
+
+                    this.PutOutlinedText(rect.Characters[5].ToString(), rect.Coordinate.X + rect.Coordinate.Width - width / 2 - 25,
+                        rect.Coordinate.Y + rect.Coordinate.Height - 10, 5, color); //Z
+                }
+
+                for (var i = 0; i < 3; i++)
+                {
+                    //row 1
+                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
+                        new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height), color, 2);
+
+                    //row 2
+                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
+                       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height), color, 2);
+
+                    //row 3
+                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
+                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height), color, 2);
+                }
+
+                Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
+                   new Point((rect.Coordinate.X + rect.Coordinate.Width),
+                       (rect.Coordinate.Y + rect.Coordinate.Height)), scalar, 5);
+            }
+        }
+
         /// <summary>
         /// Create the grid of character-areas, so that the position of the pupil can be mapped to 
         /// a subset of characters. Subsequently, the next measured position can be mapped to a single 
         /// letter in the subset or the end of a word
         /// </summary>
-        private void CreateGridSubSet()
+        private void CreateGridSubSet(int width, int height)
         {
-            var vwxyz = SubsetPartition.OPQRSTY.ToString().ToCharArray().ToList();
-            vwxyz.Add('_');
-            var size = 25;
-            var correction = 10;
+            var ySize = height/2;
+            var xSize = width/3;
             SubSets = new List<Subset>
             {
                 new Subset
                 {
-                    Partition = SubsetPartition.ABCDEFG,
-                    Coordinate = new Rectangle(0, 0, size, size),
-                    Characters = SubsetPartition.ABCDEFG.ToString().ToCharArray().ToList()
+                    Partition = SubsetPartition.ABCD,
+                    Coordinate = new Rectangle(0, 0, xSize, ySize),
+                    Characters = SubsetPartition.ABCD.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.HIJKLMN,
-                    Coordinate = new Rectangle(100 - size, 0, size, size),
-                    Characters = SubsetPartition.HIJKLMN.ToString().ToCharArray().ToList()
+                    Partition = SubsetPartition.EFGH,
+                    Coordinate = new Rectangle(xSize, 0, xSize, ySize),
+                    Characters = SubsetPartition.EFGH.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.VWXYZ,
-                    Coordinate = new Rectangle(100 - size, 100 - size, size, size),
-                    Characters = SubsetPartition.VWXYZ.ToString().ToCharArray().ToList()
+                    Partition = SubsetPartition.IJKL,
+                    Coordinate = new Rectangle(xSize*2, 0, xSize, ySize),
+                    Characters = SubsetPartition.IJKL.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.OPQRSTY,
-                    Coordinate = new Rectangle(0, 100 - size , size, size),
-                    Characters = vwxyz
+                    Partition = SubsetPartition.MNOP,
+                    Coordinate = new Rectangle(0, ySize , xSize, ySize),
+                    Characters = SubsetPartition.MNOP.ToString().ToCharArray().ToList()
+                }, new Subset
+                {
+                    Partition = SubsetPartition.QRST,
+                    Coordinate = new Rectangle(xSize, ySize , xSize, ySize),
+                    Characters = SubsetPartition.QRST.ToString().ToCharArray().ToList()
+                },
+                 new Subset
+                {
+                    Partition = SubsetPartition.UVWXYZ,
+                    Coordinate = new Rectangle(xSize*2, ySize, xSize, ySize),
+                    Characters = SubsetPartition.UVWXYZ.ToString().ToCharArray().ToList()
                 }
             };
         }
@@ -299,6 +371,7 @@ namespace GazeToSpeech.Droid
 
                 if (_captureMethod == CaptureMethod.Subset)
                 {
+                    //Determine distance between each subset and the iris-position
                     foreach (var s in SubSets)
                     {
                         var center = new Point(s.Coordinate.X + s.Coordinate.Width/2,
@@ -315,6 +388,7 @@ namespace GazeToSpeech.Droid
                         s.DistanceToPoint = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
                     }
 
+                    //the current subset is the one with the smallest distance to the iris-position
                     _currentSubset = SubSets.Single(s => s.DistanceToPoint == SubSets.Min(s2 => s2.DistanceToPoint));
 
                     if (_currentSubset != null)
@@ -329,13 +403,17 @@ namespace GazeToSpeech.Droid
 
                     switch (_currentSubset.Partition)
                     {
-                        case SubsetPartition.ABCDEFG:
+                        case SubsetPartition.ABCD:
                             break;
-                        case SubsetPartition.HIJKLMN:
+                        case SubsetPartition.EFGH:
                             break;
-                        case SubsetPartition.OPQRSTY:
+                        case SubsetPartition.IJKL:
                             break;
-                        case SubsetPartition.VWXYZ:
+                        case SubsetPartition.MNOP:
+                            break;
+                        case SubsetPartition.QRST:
+                            break;
+                        case SubsetPartition.UVWXYZ:
                             break;
                     }
 
