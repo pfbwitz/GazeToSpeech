@@ -1,5 +1,7 @@
 using Android.App;
 using Android.Content;
+using GazeToSpeech.Common.Enumeration;
+using GazeToSpeech.Common.Interface;
 using GazeToSpeech.Droid;
 using Xamarin.Forms;
 

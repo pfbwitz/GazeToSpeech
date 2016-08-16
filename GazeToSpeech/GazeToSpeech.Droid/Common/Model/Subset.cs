@@ -9,5 +9,7 @@ namespace GazeToSpeech.Droid.Common.Model
         public Rectangle Coordinate { get; set; }
 
         public List<char> Characters { get; set; }
+
+        public double DistanceToPoint { get; set; }
     }
 }

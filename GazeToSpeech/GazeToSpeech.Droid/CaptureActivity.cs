@@ -7,11 +7,13 @@ using Android.Content.PM;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
+using GazeToSpeech.Common.Enumeration;
 using GazeToSpeech.Droid.Common;
 using GazeToSpeech.Droid.Common.Helper;
 using GazeToSpeech.Droid.Common.Model;
 using GazeToSpeech.Droid.Engine;
 using Java.IO;
+using Java.Util;
 using OpenCV.Android;
 using OpenCV.Core;
 using OpenCV.ImgProc;
@@ -37,6 +39,13 @@ namespace GazeToSpeech.Droid
         #region properties
 
         #region public
+
+        public bool Speaking;
+        public bool Calibrating = true;
+        public Rect AvgLeftEye;
+        public Rect AvgRightEye;
+        public List<Rect> RightRectCaptures = new List<Rect>();
+        public List<Rect> LeftRectCaptures = new List<Rect>();
 
         public readonly CaptureActivity Instance;
 
@@ -71,7 +80,7 @@ namespace GazeToSpeech.Droid
 
         private CaptureMethod _captureMethod;
         private Subset _currentSubset;
-        private List<Subset> _subSets;
+        public List<Subset> SubSets;
 
         private bool _handling;
 
@@ -205,7 +214,6 @@ namespace GazeToSpeech.Droid
 
             if (face != null)
             {
-                _handling = true;
                 Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255), 3);
 
                 var eyeareaRight = new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
@@ -225,7 +233,7 @@ namespace GazeToSpeech.Droid
                 RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
 
                 if (ShouldAct())
-                    RunOnUiThread(() => HandleEyePosition(PosLeft ?? PosRight));
+                    RunOnUiThread(() => HandleEyePosition(avgPos));
             }
             else
                 RunOnUiThread(() => this.PutText(new[] { TextView1, TextView2, Textview3 }, string.Empty));
@@ -245,81 +253,108 @@ namespace GazeToSpeech.Droid
         {
             var vwxyz = SubsetPartition.OPQRSTY.ToString().ToCharArray().ToList();
             vwxyz.Add('_');
-
-            _subSets = new List<Subset>
+            var size = 25;
+            var correction = 10;
+            SubSets = new List<Subset>
             {
                 new Subset
                 {
                     Partition = SubsetPartition.ABCDEFG,
-                    Coordinate = new Rectangle(0, 0, 50, 50),
+                    Coordinate = new Rectangle(0, 0, size, size),
                     Characters = SubsetPartition.ABCDEFG.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
                     Partition = SubsetPartition.HIJKLMN,
-                    Coordinate = new Rectangle(50, 0, 50, 50),
+                    Coordinate = new Rectangle(100 - size, 0, size, size),
                     Characters = SubsetPartition.HIJKLMN.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
                     Partition = SubsetPartition.VWXYZ,
-                    Coordinate = new Rectangle(50, 50, 50, 50),
+                    Coordinate = new Rectangle(100 - size, 100 - size, size, size),
                     Characters = SubsetPartition.VWXYZ.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
                     Partition = SubsetPartition.OPQRSTY,
-                    Coordinate = new Rectangle(0, 50, 50, 50),
+                    Coordinate = new Rectangle(0, 100 - size , size, size),
                     Characters = vwxyz
                 }
             };
         }
-        
+
         /// <summary>
         /// Handle calculated position of the pupil compared to the surface of the entire eye
         /// </summary>
         /// <param name="position"></param>
         public void HandleEyePosition(Point position)
         {
-            if (position == null || _handling)
-                return;
-
-            if (_captureMethod == CaptureMethod.Subset)
+            try
             {
-                _currentSubset =_subSets.SingleOrDefault(subset => 
-                    subset.Coordinate.Contains((int) position.X, (int) position.Y));
-
-                if (_currentSubset == null)
+                if (position == null || _handling)
                     return;
 
-                TextToSpeechHelper.Speak(_currentSubset.Partition.ToString());
-            }
-            else if (_captureMethod == CaptureMethod.Character)
-            {
-                _captureMethod = CaptureMethod.Subset;
+                _handling = true;
 
-                switch (_currentSubset.Partition)
+                if (_captureMethod == CaptureMethod.Subset)
                 {
-                    case SubsetPartition.ABCDEFG:
-                        break;
-                    case SubsetPartition.HIJKLMN:
-                        break;
-                    case SubsetPartition.OPQRSTY:
-                        break;
-                    case SubsetPartition.VWXYZ:
-                        break;
+                    foreach (var s in SubSets)
+                    {
+                        var center = new Point(s.Coordinate.X + s.Coordinate.Width/2,
+                            s.Coordinate.Y + s.Coordinate.Height/2);
+
+                        var distanceX = position.X - center.X;
+                        if (distanceX < 0)
+                            distanceX = distanceX * -1;
+
+                        var distanceY = position.Y - center.Y;
+                        if (distanceY < 0)
+                            distanceY = distanceY * -1;
+
+                        s.DistanceToPoint = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+                    }
+
+                    _currentSubset = SubSets.Single(s => s.DistanceToPoint == SubSets.Min(s2 => s2.DistanceToPoint));
+
+                    if (_currentSubset != null)
+                    {
+                        TextToSpeechHelper.Speak(_currentSubset.Partition.ToString().First().ToString());
+                        _handling = false;
+                    }
                 }
+                else if (_captureMethod == CaptureMethod.Character)
+                {
+                    _captureMethod = CaptureMethod.Subset;
 
-                CharacterBuffer.Add("P");
-                TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                    switch (_currentSubset.Partition)
+                    {
+                        case SubsetPartition.ABCDEFG:
+                            break;
+                        case SubsetPartition.HIJKLMN:
+                            break;
+                        case SubsetPartition.OPQRSTY:
+                            break;
+                        case SubsetPartition.VWXYZ:
+                            break;
+                    }
+
+                    CharacterBuffer.Add("P");
+                    TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                }
+                else if (_captureMethod == CaptureMethod.Word)
+                {
+                    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
+                    CharacterBuffer.Clear();
+                }
             }
-            else if (_captureMethod == CaptureMethod.Word)
+            catch (Exception ex)
             {
-                TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
-                CharacterBuffer.Clear();
             }
-
-            _handling = false;
+            finally
+            {
+                _handling = false;
+            }
         }
 
         /// <summary>

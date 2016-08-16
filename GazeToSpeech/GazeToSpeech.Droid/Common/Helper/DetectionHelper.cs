@@ -69,13 +69,44 @@ namespace GazeToSpeech.Droid.Common.Helper
                 var eye = eyesArray[i];
                 eye.X = area.X + eye.X;
                 eye.Y = area.Y + eye.Y;
+                Imgproc.Rectangle(activity.MRgba, eye.Tl(), eye.Br(), new Scalar(0, 255, 255), 3);
                 var eyeOnlyRectangle = new Rect((int)eye.Tl().X,
                         (int)(eye.Tl().Y + eye.Height * 0.4), eye.Width,
                         (int)(eye.Height * 0.6));
+
+                if (activity.Calibrating)
+                {
+                    if(isLefteye && activity.LeftRectCaptures.Count < 10)
+                        activity.LeftRectCaptures.Add(eyeOnlyRectangle);
+                    else if (activity.RightRectCaptures.Count < 10)
+                        activity.RightRectCaptures.Add(eyeOnlyRectangle);
+
+                    if (activity.LeftRectCaptures.Count == 10 && activity.RightRectCaptures.Count == 10)
+                    {
+                        var avgLeftWidth = (int)activity.LeftRectCaptures.Average(c => c.Width);
+                        var avgLeftHeight = (int)activity.LeftRectCaptures.Average(c => c.Height);
+                        var avgLeftX = (int)activity.LeftRectCaptures.Average(c => c.X);
+                        var avgLeftY = (int)activity.LeftRectCaptures.Average(c => c.Y);
+                        activity.AvgLeftEye = new Rect(avgLeftX, avgLeftY, avgLeftWidth, avgLeftHeight);
+
+                        var avgRightWidth = (int)activity.RightRectCaptures.Average(c => c.Width);
+                        var avgRightHeight = (int)activity.RightRectCaptures.Average(c => c.Height);
+                        var avgRightX = (int)activity.RightRectCaptures.Average(c => c.X);
+                        var avgRightY = (int)activity.RightRectCaptures.Average(c => c.Y);
+                        activity.AvgRightEye = new Rect(avgRightX, avgRightY, avgRightWidth, avgRightHeight);
+
+                        activity.Calibrating = false;
+                    }
+
+                    return template;
+                }
+
                 mRoi = activity.MGray.Submat(eyeOnlyRectangle);
                 var vyrez = activity.MRgba.Submat(eyeOnlyRectangle);
 
                 var mmG = Core.MinMaxLoc(mRoi);
+
+                DrawAvgRectangles(activity, isLefteye, area);
 
                 Imgproc.Rectangle(activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(),
                     new Scalar(255, 255, 255), 2);
@@ -106,8 +137,18 @@ namespace GazeToSpeech.Droid.Common.Helper
                 {
                     if (isLefteye)
                     {
-                        var absolute = new Point(x/100*App.Width, y/100*App.Height);
-                        Imgproc.Circle(activity.MRgba, absolute, 10, new Scalar(0, 255, 0), 2);
+                        //absolute positioning in screen
+                        foreach (var rect in activity.SubSets)
+                        {
+                            Imgproc.Rectangle(activity.MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
+                                new Point((rect.Coordinate.X + rect.Coordinate.Width),
+                                    (rect.Coordinate.Y + rect.Coordinate.Height)), new Scalar(0, 255, 0), 2);
+                        }
+                        Imgproc.Rectangle(activity.MRgba, new Point(0, 0), new Point(100, 100), new Scalar(0, 255, 0), 2);
+
+                        Imgproc.Circle(activity.MRgba, new Point(x, y),
+                            5, new Scalar(0, 255, 0), 2);
+
                         activity.PosLeft = new Point(x, y);
                         activity.PutOutlinedText("X: " + (int)activity.PosLeft.X + " Y: " + (int)activity.PosLeft.Y, (int)(iris.X + 10),
                             (int)(iris.Y + 30));
@@ -145,6 +186,25 @@ namespace GazeToSpeech.Droid.Common.Helper
                 return template;
             }
             return template;
+        }
+
+        public static void DrawAvgRectangles(this CaptureActivity activity, bool isLefteye, Rect area)
+        {
+            //var r = isLefteye ? activity.AvgLeftEye : activity.AvgRightEye;
+
+            //Imgproc.Rectangle(
+            //  activity.MRgba,
+            //  new Point(area.X + ((area.X - r.Width) / 2), area.Y + ((area.Y - r.Height) / 2)),
+            //  new Point(area.Br().X - (((area.X - r.Width) / 2)), area.Br().Y - (((area.X - r.Width) / 2))),
+            //  new Scalar(255, 0, 255)
+            //  ); 
+
+            //Imgproc.Rectangle(
+            //    activity.MRgba, 
+            //    new Point(area.X + ((area.X - r.Width)/2), area.Y + ((area.Y - r.Height)/2)),
+            //    new Point(area.Br().X - (((area.X - r.Width) / 2)), area.Br().Y - (((area.X - r.Width) / 2))), 
+            //    new Scalar(255, 0, 255)
+            //    ); 
         }
 
         public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, int size, out bool pupilFound)
