@@ -8,7 +8,7 @@ namespace GazeToSpeech.Pages
 {
     public class CapturePage : CustomPage
     {
-        public CapturePage()
+        public override void LoadMe()
         {
             Title = TextResources.TtlCapture;
             var button = new CustomButton { Text = "Start Backfacing Camera Capture" };

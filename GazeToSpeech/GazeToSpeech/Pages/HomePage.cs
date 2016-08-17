@@ -5,9 +5,10 @@ namespace GazeToSpeech.Pages
 {
     public class HomePage : CustomPage
     {
-        public HomePage()
+        public override void LoadMe()
         {
             Title = TextResources.TtlHome;
+            Padding = new Thickness(0);
             var webview = new WebView
             {
                 HorizontalOptions = LayoutOptions.FillAndExpand,

@@ -5,7 +5,10 @@ namespace GazeToSpeech.Model
     [Table("USER")]
     public class User : BaseModel
     {
-        [Column("ID"), PrimaryKey, AutoIncrement]
-        public new int Id { get; set; }
+        [Column("LANGUAGE")]
+        public string Language { get; set; }
+
+        [Column("CAMERAFACING")]
+        public string CameraFacing { get; set; }
     }
 }

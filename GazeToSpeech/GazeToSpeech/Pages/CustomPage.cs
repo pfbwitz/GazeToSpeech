@@ -1,12 +1,19 @@
-﻿using Xamarin.Forms;
+﻿using GazeToSpeech.Common.Interface;
+using Xamarin.Forms;
 
 namespace GazeToSpeech.Pages
 {
-    public class CustomPage : ContentPage, IPage
+    public abstract class CustomPage : ContentPage, IPage
     {
-        public CustomPage()
+        protected CustomPage()
         {
             Padding = new Thickness(5);
+            LoadMe();
+        }
+
+        public virtual void LoadMe()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

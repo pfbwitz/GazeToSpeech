@@ -5,11 +5,11 @@ using System.Linq;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using Android.Util;
 using Android.Views;
 using Android.Widget;
 using GazeToSpeech.Common.Enumeration;
 using GazeToSpeech.Droid.Common;
-using GazeToSpeech.Droid.Common.Enum;
 using GazeToSpeech.Droid.Common.Helper;
 using GazeToSpeech.Droid.Common.Model;
 using GazeToSpeech.Droid.Engine;
@@ -19,6 +19,7 @@ using OpenCV.Android;
 using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
+using OpenCV.Video;
 using Point = OpenCV.Core.Point;
 using Size = OpenCV.Core.Size;
 
@@ -52,8 +53,9 @@ namespace GazeToSpeech.Droid
 
         #region public
 
+        public int Facing;
+
         public bool Speaking;
-        public bool Calibrating = true;
         public Rect AvgLeftEye;
         public Rect AvgRightEye;
         public List<Rect> RightRectCaptures = new List<Rect>();
@@ -80,18 +82,12 @@ namespace GazeToSpeech.Droid
         public DetectionBasedTracker MNativeDetector { get; set; }
         public DetectionBasedTracker MNativeDetectorEye { get; set; }
 
-        public TextView TextView1;
-        public TextView TextView2;
-        public TextView Textview3;
-
         #endregion
 
         #region private
 
         private Mat _templateR;
         private Mat _templateL;
-
-        private int _seconds = 2;
 
         private CaptureMethod _captureMethod;
         private Subset _currentSubset;
@@ -133,13 +129,13 @@ namespace GazeToSpeech.Droid
             _mOpenCvCameraView = FindViewById<CameraBridgeViewBase>(Resource.Id.fd_activity_surface_view);
             _mOpenCvCameraView.Visibility = ViewStates.Visible;
 
-            var facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
-            _mOpenCvCameraView.SetCameraIndex(facing);
-            _mOpenCvCameraView.SetCvCameraViewListener2(this);
+#if DEBUG
+             _mOpenCvCameraView.EnableFpsMeter();
+#endif
 
-            TextView1 = FindViewById<TextView>(Resource.Id.tv1);
-            TextView2 = FindViewById<TextView>(Resource.Id.tv2);
-            Textview3 = FindViewById<TextView>(Resource.Id.tv3);
+            Facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
+            _mOpenCvCameraView.SetCameraIndex(Facing);
+            _mOpenCvCameraView.SetCvCameraViewListener2(this);
 
             _mLoaderCallback = new Callback(this, _mOpenCvCameraView);
         }
@@ -182,8 +178,13 @@ namespace GazeToSpeech.Droid
             MRgba.Release();
         }
 
+        private readonly List<Point> _pupils = new List<Point>();
+        private int _drawCount;
+     
+
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
+           
             _framecount++;
             PosLeft = PosRight = null;
 
@@ -200,7 +201,7 @@ namespace GazeToSpeech.Droid
             if (SubSets == null)
                 CreateGridSubSet(w, h);
 
-            PopulateGrid();
+            //PopulateGrid();
 
             if (_mAbsoluteFaceSize == 0)
             {
@@ -224,59 +225,85 @@ namespace GazeToSpeech.Droid
 
             if (face != null)
             {
-                //Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255), 3);
-
                 var eyeareaRight = new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
                     (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
                 var eyeareaLeft = new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
                     (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
-
-                //if (DetectionHelper.Learned < 5)
-                //{
-                //    _templateR = this.GetTemplate(MJavaDetectorEye, eyeareaLeft, 24);
-                //    _templateL = this.GetTemplate(MJavaDetectorEye, eyeareaLeft, 24);
-                //    DetectionHelper.Learned++;
-                //}
-                //else
-                //{
-                //    this.MatchEye(eyeareaRight, _templateR, DetectionHelper.TmSqdiffNormed);
-                //    this.MatchEye(eyeareaLeft, _templateL, DetectionHelper.TmSqdiffNormed);
-                //}
 
                 Imgproc.Rectangle(MRgba, eyeareaLeft.Tl(), eyeareaLeft.Br(), new Scalar(255, 0, 0, 255), 2);
                 Imgproc.Rectangle(MRgba, eyeareaRight.Tl(), eyeareaRight.Br(), new Scalar(255, 0, 0, 255), 2);
 
                 bool pupilFoundRight;
                 bool pupilFoundLeft;
-                this.DetectRightEye(MJavaDetectorEye, eyeareaRight, 24, out pupilFoundRight);
-                this.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, 24, out pupilFoundLeft);
-                var avgPos = this.GetAvgEyePoint();
+                this.DetectRightEye(MJavaDetectorEye, eyeareaRight, face, 24, out pupilFoundRight);
+                this.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, face, 24, out pupilFoundLeft);
+                var positionToDraw = PosLeft ?? PosRight;
 
-                RunOnUiThread(() => this.PutText(Textview3, "avg X: " + avgPos.X + " Y: " + avgPos.Y));
+                if (PosLeft == null)
+                {
+                    _drawCount = 0;
+                    _pupils.Clear();
+                }
 
-                Imgproc.Circle(MRgba, new Point(((avgPos.X / 100) * w), (avgPos.Y / 100) * h), 15, new Scalar(0, 255, 0), 2);
+                if (positionToDraw == null)
+                    return MRgba;
 
-                if (ShouldAct())
-                    RunOnUiThread(() => HandleEyePosition(avgPos));
+                Point avg = null;
+
+                var frameSkip = 5;
+                _pupils.Add(positionToDraw);
+                if (_pupils.Count >= frameSkip)
+                {
+                    _drawCount++;
+                    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
+
+                    if (_drawCount >= frameSkip)
+                    {
+                        _drawCount = 0;
+                        _pupils.Clear();
+                    }
+                }
+                else if (_pupils.Any())
+                    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
+
+                if (avg != null)
+                {
+                    var point = new Point(((avg.X/100)*w), (avg.Y/100)*h);
+                    Imgproc.Circle(MRgba, point, 15, new Scalar(255, 0, 0), 2);
+                    Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
+                    Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
+
+                    this.PutOutlinedText("X: " + point.X + " Y: " + point.Y, (int) (point.X + 30), (int) (point.Y + 30));
+
+                    PopulateGrid(point);
+
+                    if (ShouldAct())
+                        RunOnUiThread(() => HandleEyePosition(point));
+                }
             }
-            else
-                RunOnUiThread(() => this.PutText(new[] { TextView1, TextView2, Textview3 }, string.Empty));
-
             return MRgba;
         }
         #endregion
 
         #region custom methods
 
+        
+
         /// <summary>
         /// Draw the full character-grid on screen
         /// </summary>
-        private void PopulateGrid()
+        private void PopulateGrid(Point position = null)
         {
             var scalar = new Scalar(0, 255, 0);
             //absolute positioning in screen
             foreach (var rect in SubSets)
             {
+                if (rect.Coordinate.X > 0 && rect.Coordinate.Y > 0)
+                {
+                    var t = 0;
+                }
+                if (!rect.Coordinate.Contains((int) position.X, (int) position.Y))
+                    return;
                 var width = rect.Coordinate.Width / 3;
                 var height = rect.Coordinate.Height / 3;
 
@@ -291,7 +318,7 @@ namespace GazeToSpeech.Droid
                   rect.Coordinate.Y + height / 2, 5, color); //B
 
                 this.PutOutlinedText(rect.Characters[3].ToString(), rect.Coordinate.X + rect.Coordinate.Width / 2 - 10,
-                rect.Coordinate.Y + rect.Coordinate.Height - height/2, 5, color); //D H L P T X
+                rect.Coordinate.Y + rect.Coordinate.Height - height / 2, 5, color); //D H L P T X
 
                 if (rect.Characters.Count == 6)
                 {
@@ -302,25 +329,73 @@ namespace GazeToSpeech.Droid
                         rect.Coordinate.Y + rect.Coordinate.Height - 10, 5, color); //Z
                 }
 
+                //if (!rect.Coordinate.Contains((int)position.X, (int)position.Y))
+                //    return;
+
+                Rect closestRect = null;
+                double? distance = null;
+                var closestLetter = string.Empty;
                 for (var i = 0; i < 3; i++)
                 {
-                    //row 1
-                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
-                        new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height), color, 2);
+                    var rect1 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
+                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height));
+                    var rect2 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
+                       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height));
+                    var rect3 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
+                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height));
 
-                    //row 2
-                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
-                       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height), color, 2);
+                    //var c1 = color;
+                    //var c2 = color;
+                    //var c3 = color;
 
-                    //row 3
-                    Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
-                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height), color, 2);
+                    if (position != null)
+                    {
+                        var distance1 = GetDistance(position, new Point(rect1.X + rect1.Width / 2, rect1.Y + rect1.Height / 2));
+                        var distance2 = GetDistance(position, new Point(rect2.X + rect2.Width / 2, rect2.Y + rect2.Height / 2));
+                        var distance3 = GetDistance(position, new Point(rect3.X + rect3.Width / 2, rect3.Y + rect3.Height / 2));
+                        var d = new Dictionary<Rect, double>
+                        {
+                            {rect1, distance1},
+                            {rect2, distance2},
+                            {rect3, distance3}
+                        };
+                        var smallestDistance = d.Min(v => v.Value);
+                        var c = d.Single(v => v.Value == smallestDistance).Key;
+                        ;
+                        if (!distance.HasValue || smallestDistance < distance)
+                        {
+                            distance = smallestDistance;
+                            closestRect = c;
+                            //closestLetter = rect.Partition.ToString().Single(p => p.ToString()
+                            //    .ToUpper() == "A").ToString();
+                        }
+                    }
+
+                    //Imgproc.Rectangle(MRgba, rect1.Tl(), rect1.Br(), c1, 2); //row 1
+                    //Imgproc.Rectangle(MRgba, rect2.Tl(), rect2.Br(), c2, 2); //row 2
+                    //Imgproc.Rectangle(MRgba, rect3.Tl(), rect3.Br(), c3, 2); //row 3
                 }
 
                 Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
                    new Point((rect.Coordinate.X + rect.Coordinate.Width),
                        (rect.Coordinate.Y + rect.Coordinate.Height)), scalar, 5);
+
+                if (closestRect != null)
+                    Imgproc.Rectangle(MRgba, closestRect.Tl(), closestRect.Br(), new Scalar(255, 0, 0), 2);
             }
+        }
+
+        private double GetDistance(Point a, Point b)
+        {
+            var distanceX = a.X - b.X;
+            if (distanceX < 0)
+                distanceX = distanceX * -1;
+
+            var distanceY = a.Y - b.Y;
+            if (distanceY < 0)
+                distanceY = distanceY * -1;
+
+            return Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
         }
 
         /// <summary>
@@ -336,38 +411,38 @@ namespace GazeToSpeech.Droid
             {
                 new Subset
                 {
-                    Partition = SubsetPartition.ABCD,
+                    Partition = SubsetPartition.Abcd,
                     Coordinate = new Rectangle(0, 0, xSize, ySize),
-                    Characters = SubsetPartition.ABCD.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Abcd.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.EFGH,
+                    Partition = SubsetPartition.Efgh,
                     Coordinate = new Rectangle(xSize, 0, xSize, ySize),
-                    Characters = SubsetPartition.EFGH.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Efgh.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.IJKL,
+                    Partition = SubsetPartition.Ijkl,
                     Coordinate = new Rectangle(xSize*2, 0, xSize, ySize),
-                    Characters = SubsetPartition.IJKL.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Ijkl.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
-                    Partition = SubsetPartition.MNOP,
+                    Partition = SubsetPartition.Mnop,
                     Coordinate = new Rectangle(0, ySize , xSize, ySize),
-                    Characters = SubsetPartition.MNOP.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Mnop.ToString().ToCharArray().ToList()
                 }, new Subset
                 {
-                    Partition = SubsetPartition.QRST,
+                    Partition = SubsetPartition.Qrst,
                     Coordinate = new Rectangle(xSize, ySize , xSize, ySize),
-                    Characters = SubsetPartition.QRST.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Qrst.ToString().ToCharArray().ToList()
                 },
                  new Subset
                 {
-                    Partition = SubsetPartition.UVWXYZ,
+                    Partition = SubsetPartition.Uvwxyz,
                     Coordinate = new Rectangle(xSize*2, ySize, xSize, ySize),
-                    Characters = SubsetPartition.UVWXYZ.ToString().ToCharArray().ToList()
+                    Characters = SubsetPartition.Uvwxyz.ToString().ToCharArray().ToList()
                 }
             };
         }
@@ -419,17 +494,17 @@ namespace GazeToSpeech.Droid
 
                     switch (_currentSubset.Partition)
                     {
-                        case SubsetPartition.ABCD:
+                        case SubsetPartition.Abcd:
                             break;
-                        case SubsetPartition.EFGH:
+                        case SubsetPartition.Efgh:
                             break;
-                        case SubsetPartition.IJKL:
+                        case SubsetPartition.Ijkl:
                             break;
-                        case SubsetPartition.MNOP:
+                        case SubsetPartition.Mnop:
                             break;
-                        case SubsetPartition.QRST:
+                        case SubsetPartition.Qrst:
                             break;
-                        case SubsetPartition.UVWXYZ:
+                        case SubsetPartition.Uvwxyz:
                             break;
                     }
 

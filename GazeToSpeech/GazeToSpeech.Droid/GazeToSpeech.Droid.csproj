@@ -113,11 +113,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\Enum\CaptureMethod.cs" />
+    <Compile Include="Implementation\DeviceHelper.cs" />
     <Compile Include="Implementation\SqliteHelper.cs" />
     <Compile Include="NativeOpenCvEngine.cs" />
     <Compile Include="Common\Helper\DetectionHelper.cs" />
-    <Compile Include="Common\Enum\MatchingMethod.cs" />
     <Compile Include="Common\Helper\TextHelper.cs" />
     <Compile Include="Common\Helper\TextToSpeechHelper.cs" />
     <Compile Include="CaptureActivity.cs" />
@@ -127,7 +126,6 @@
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Common\Model\Subset.cs" />
-    <Compile Include="Common\Enum\SubsetPartition.cs" />
     <Compile Include="SplashActivity.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +210,10 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\capture_selected.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\home.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\home_selected.png" />
+    <AndroidResource Include="Resources\drawable\banner.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Common\Enum\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />

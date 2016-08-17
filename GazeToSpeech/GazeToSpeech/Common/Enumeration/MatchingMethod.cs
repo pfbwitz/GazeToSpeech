@@ -1,4 +1,4 @@
-namespace GazeToSpeech.Droid.Common
+namespace GazeToSpeech.Common.Enumeration
 {
     public static class MatchingMethod
     {

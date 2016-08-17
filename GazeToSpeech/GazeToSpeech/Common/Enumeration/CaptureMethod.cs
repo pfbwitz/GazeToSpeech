@@ -1,4 +1,4 @@
-namespace GazeToSpeech.Droid.Common.Enum
+namespace GazeToSpeech.Common.Enumeration
 {
     /// <summary>
     /// Current configuration of pupil tracking. Are we setting the character-subset, the current letter or 

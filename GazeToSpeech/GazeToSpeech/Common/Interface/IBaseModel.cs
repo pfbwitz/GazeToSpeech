@@ -1,4 +1,4 @@
-﻿namespace  GazeToSpeech.Model
+﻿namespace  GazeToSpeech.Common.Interface
 {
 	public interface IBaseModel
 	{

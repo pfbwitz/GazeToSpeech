@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Drawing;
-using GazeToSpeech.Droid.Common.Enum;
+using GazeToSpeech.Common.Enumeration;
 
 namespace GazeToSpeech.Droid.Common.Model
 {

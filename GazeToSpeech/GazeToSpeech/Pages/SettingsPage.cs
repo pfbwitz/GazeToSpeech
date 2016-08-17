@@ -3,12 +3,12 @@ using Xamarin.Forms;
 
 namespace GazeToSpeech.Pages
 {
-    class SettingsPage : CustomPage
+    public class SettingsPage : CustomPage
     {
-        public SettingsPage()
+        public override void LoadMe()
         {
             Title = TextResources.TtlSettings;
-            Content = new Label {Text = "Settings"};
+            Content = new Label { Text = "Settings" };
         }
     }
 }

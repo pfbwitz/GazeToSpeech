@@ -41,6 +41,10 @@
     <Compile Include="Common\Data\DatabaseHelper.cs" />
     <Compile Include="Common\Data\QueryHelper.cs" />
     <Compile Include="Common\Enumeration\CameraFacing.cs" />
+    <Compile Include="Common\Enumeration\CaptureMethod.cs" />
+    <Compile Include="Common\Enumeration\MatchingMethod.cs" />
+    <Compile Include="Common\Enumeration\SubsetPartition.cs" />
+    <Compile Include="Common\Interface\IDeviceHelper.cs" />
     <Compile Include="Common\Interface\ISqliteHelper.cs" />
     <Compile Include="Common\TextResources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -53,11 +57,11 @@
     <Compile Include="Common\UI\MenuViewCell.cs" />
     <Compile Include="Model\BaseModel.cs" />
     <Compile Include="Model\Gebruiker.cs" />
-    <Compile Include="Model\IBaseModel.cs" />
+    <Compile Include="Common\Interface\IBaseModel.cs" />
     <Compile Include="Pages\CapturePage.cs" />
     <Compile Include="Pages\CustomPage.cs" />
     <Compile Include="Pages\HomePage.cs" />
-    <Compile Include="Pages\IPage.cs" />
+    <Compile Include="Common\Interface\IPage.cs" />
     <Compile Include="Pages\MainPage.cs" />
     <Compile Include="Common\Interface\IOpenCvEngine.cs" />
     <Compile Include="Pages\SettingsPage.cs" />

@@ -3222,142 +3222,145 @@ namespace GazeToSpeech.Droid
 			public const int backbutton = 2130837566;
 			
 			// aapt resource value: 0x7f02003f
-			public const int capture = 2130837567;
+			public const int banner = 2130837567;
 			
 			// aapt resource value: 0x7f020040
-			public const int capture_selected = 2130837568;
+			public const int capture = 2130837568;
 			
 			// aapt resource value: 0x7f020041
-			public const int design_fab_background = 2130837569;
+			public const int capture_selected = 2130837569;
 			
 			// aapt resource value: 0x7f020042
-			public const int design_snackbar_background = 2130837570;
+			public const int design_fab_background = 2130837570;
 			
 			// aapt resource value: 0x7f020043
-			public const int hamburger = 2130837571;
+			public const int design_snackbar_background = 2130837571;
 			
 			// aapt resource value: 0x7f020044
-			public const int home = 2130837572;
+			public const int hamburger = 2130837572;
 			
 			// aapt resource value: 0x7f020045
-			public const int home_selected = 2130837573;
+			public const int home = 2130837573;
 			
 			// aapt resource value: 0x7f020046
-			public const int ic_cast_dark = 2130837574;
+			public const int home_selected = 2130837574;
 			
 			// aapt resource value: 0x7f020047
-			public const int ic_cast_disabled_light = 2130837575;
+			public const int ic_cast_dark = 2130837575;
 			
 			// aapt resource value: 0x7f020048
-			public const int ic_cast_light = 2130837576;
+			public const int ic_cast_disabled_light = 2130837576;
 			
 			// aapt resource value: 0x7f020049
-			public const int ic_cast_off_light = 2130837577;
+			public const int ic_cast_light = 2130837577;
 			
 			// aapt resource value: 0x7f02004a
-			public const int ic_cast_on_0_light = 2130837578;
+			public const int ic_cast_off_light = 2130837578;
 			
 			// aapt resource value: 0x7f02004b
-			public const int ic_cast_on_1_light = 2130837579;
+			public const int ic_cast_on_0_light = 2130837579;
 			
 			// aapt resource value: 0x7f02004c
-			public const int ic_cast_on_2_light = 2130837580;
+			public const int ic_cast_on_1_light = 2130837580;
 			
 			// aapt resource value: 0x7f02004d
-			public const int ic_cast_on_light = 2130837581;
+			public const int ic_cast_on_2_light = 2130837581;
 			
 			// aapt resource value: 0x7f02004e
-			public const int ic_media_pause = 2130837582;
+			public const int ic_cast_on_light = 2130837582;
 			
 			// aapt resource value: 0x7f02004f
-			public const int ic_media_play = 2130837583;
+			public const int ic_media_pause = 2130837583;
 			
 			// aapt resource value: 0x7f020050
-			public const int ic_media_route_disabled_mono_dark = 2130837584;
+			public const int ic_media_play = 2130837584;
 			
 			// aapt resource value: 0x7f020051
-			public const int ic_media_route_off_mono_dark = 2130837585;
+			public const int ic_media_route_disabled_mono_dark = 2130837585;
 			
 			// aapt resource value: 0x7f020052
-			public const int ic_media_route_on_0_mono_dark = 2130837586;
+			public const int ic_media_route_off_mono_dark = 2130837586;
 			
 			// aapt resource value: 0x7f020053
-			public const int ic_media_route_on_1_mono_dark = 2130837587;
+			public const int ic_media_route_on_0_mono_dark = 2130837587;
 			
 			// aapt resource value: 0x7f020054
-			public const int ic_media_route_on_2_mono_dark = 2130837588;
+			public const int ic_media_route_on_1_mono_dark = 2130837588;
 			
 			// aapt resource value: 0x7f020055
-			public const int ic_media_route_on_mono_dark = 2130837589;
+			public const int ic_media_route_on_2_mono_dark = 2130837589;
 			
 			// aapt resource value: 0x7f020056
-			public const int ic_pause_dark = 2130837590;
+			public const int ic_media_route_on_mono_dark = 2130837590;
 			
 			// aapt resource value: 0x7f020057
-			public const int ic_pause_light = 2130837591;
+			public const int ic_pause_dark = 2130837591;
 			
 			// aapt resource value: 0x7f020058
-			public const int ic_play_dark = 2130837592;
+			public const int ic_pause_light = 2130837592;
 			
 			// aapt resource value: 0x7f020059
-			public const int ic_play_light = 2130837593;
+			public const int ic_play_dark = 2130837593;
 			
 			// aapt resource value: 0x7f02005a
-			public const int ic_setting_dark = 2130837594;
+			public const int ic_play_light = 2130837594;
 			
 			// aapt resource value: 0x7f02005b
-			public const int ic_setting_light = 2130837595;
+			public const int ic_setting_dark = 2130837595;
 			
 			// aapt resource value: 0x7f02005c
-			public const int icon = 2130837596;
+			public const int ic_setting_light = 2130837596;
 			
 			// aapt resource value: 0x7f02005d
-			public const int mr_ic_cast_dark = 2130837597;
+			public const int icon = 2130837597;
 			
 			// aapt resource value: 0x7f02005e
-			public const int mr_ic_cast_light = 2130837598;
+			public const int mr_ic_cast_dark = 2130837598;
 			
 			// aapt resource value: 0x7f02005f
-			public const int mr_ic_media_route_connecting_mono_dark = 2130837599;
+			public const int mr_ic_cast_light = 2130837599;
 			
 			// aapt resource value: 0x7f020060
-			public const int mr_ic_media_route_connecting_mono_light = 2130837600;
+			public const int mr_ic_media_route_connecting_mono_dark = 2130837600;
 			
 			// aapt resource value: 0x7f020061
-			public const int mr_ic_media_route_mono_dark = 2130837601;
+			public const int mr_ic_media_route_connecting_mono_light = 2130837601;
 			
 			// aapt resource value: 0x7f020062
-			public const int mr_ic_media_route_mono_light = 2130837602;
+			public const int mr_ic_media_route_mono_dark = 2130837602;
 			
 			// aapt resource value: 0x7f020063
-			public const int mr_ic_pause_dark = 2130837603;
+			public const int mr_ic_media_route_mono_light = 2130837603;
 			
 			// aapt resource value: 0x7f020064
-			public const int mr_ic_pause_light = 2130837604;
+			public const int mr_ic_pause_dark = 2130837604;
 			
 			// aapt resource value: 0x7f020065
-			public const int mr_ic_play_dark = 2130837605;
+			public const int mr_ic_pause_light = 2130837605;
 			
 			// aapt resource value: 0x7f020066
-			public const int mr_ic_play_light = 2130837606;
+			public const int mr_ic_play_dark = 2130837606;
 			
 			// aapt resource value: 0x7f020067
-			public const int mr_ic_settings_dark = 2130837607;
+			public const int mr_ic_play_light = 2130837607;
 			
 			// aapt resource value: 0x7f020068
-			public const int mr_ic_settings_light = 2130837608;
-			
-			// aapt resource value: 0x7f02006c
-			public const int notification_template_icon_bg = 2130837612;
+			public const int mr_ic_settings_dark = 2130837608;
 			
 			// aapt resource value: 0x7f020069
-			public const int settings = 2130837609;
+			public const int mr_ic_settings_light = 2130837609;
+			
+			// aapt resource value: 0x7f02006d
+			public const int notification_template_icon_bg = 2130837613;
 			
 			// aapt resource value: 0x7f02006a
-			public const int settings_selected = 2130837610;
+			public const int settings = 2130837610;
 			
 			// aapt resource value: 0x7f02006b
-			public const int splash = 2130837611;
+			public const int settings_selected = 2130837611;
+			
+			// aapt resource value: 0x7f02006c
+			public const int splash = 2130837612;
 			
 			static Drawable()
 			{
@@ -3372,8 +3375,8 @@ namespace GazeToSpeech.Droid
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f0c007d
-			public const int action0 = 2131492989;
+			// aapt resource value: 0x7f0c0079
+			public const int action0 = 2131492985;
 			
 			// aapt resource value: 0x7f0c0058
 			public const int action_bar = 2131492952;
@@ -3399,8 +3402,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0059
 			public const int action_context_bar = 2131492953;
 			
-			// aapt resource value: 0x7f0c0081
-			public const int action_divider = 2131492993;
+			// aapt resource value: 0x7f0c007d
+			public const int action_divider = 2131492989;
 			
 			// aapt resource value: 0x7f0c0002
 			public const int action_menu_divider = 2131492866;
@@ -3429,8 +3432,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0038
 			public const int any = 2131492920;
 			
-			// aapt resource value: 0x7f0c0075
-			public const int art = 2131492981;
+			// aapt resource value: 0x7f0c0071
+			public const int art = 2131492977;
 			
 			// aapt resource value: 0x7f0c0039
 			public const int back = 2131492921;
@@ -3444,11 +3447,11 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c004e
 			public const int buttonPanel = 2131492942;
 			
-			// aapt resource value: 0x7f0c007a
-			public const int buttons = 2131492986;
+			// aapt resource value: 0x7f0c0076
+			public const int buttons = 2131492982;
 			
-			// aapt resource value: 0x7f0c007e
-			public const int cancel_action = 2131492990;
+			// aapt resource value: 0x7f0c007a
+			public const int cancel_action = 2131492986;
 			
 			// aapt resource value: 0x7f0c0029
 			public const int center = 2131492905;
@@ -3462,8 +3465,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0050
 			public const int checkbox = 2131492944;
 			
-			// aapt resource value: 0x7f0c0084
-			public const int chronometer = 2131492996;
+			// aapt resource value: 0x7f0c0080
+			public const int chronometer = 2131492992;
 			
 			// aapt resource value: 0x7f0c0031
 			public const int clip_horizontal = 2131492913;
@@ -3489,14 +3492,14 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0041
 			public const int default_activity_button = 2131492929;
 			
-			// aapt resource value: 0x7f0c0074
-			public const int default_control_frame = 2131492980;
+			// aapt resource value: 0x7f0c0070
+			public const int default_control_frame = 2131492976;
 			
 			// aapt resource value: 0x7f0c000d
 			public const int disableHome = 2131492877;
 			
-			// aapt resource value: 0x7f0c007b
-			public const int disconnect = 2131492987;
+			// aapt resource value: 0x7f0c0077
+			public const int disconnect = 2131492983;
 			
 			// aapt resource value: 0x7f0c005a
 			public const int edit_query = 2131492954;
@@ -3504,8 +3507,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c001a
 			public const int end = 2131492890;
 			
-			// aapt resource value: 0x7f0c0089
-			public const int end_padder = 2131493001;
+			// aapt resource value: 0x7f0c0085
+			public const int end_padder = 2131492997;
 			
 			// aapt resource value: 0x7f0c0022
 			public const int enterAlways = 2131492898;
@@ -3537,8 +3540,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0036
 			public const int @fixed = 2131492918;
 			
-			// aapt resource value: 0x7f0c006e
-			public const int fragment_container = 2131492974;
+			// aapt resource value: 0x7f0c006a
+			public const int fragment_container = 2131492970;
 			
 			// aapt resource value: 0x7f0c003a
 			public const int front = 2131492922;
@@ -3558,17 +3561,17 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0040
 			public const int image = 2131492928;
 			
-			// aapt resource value: 0x7f0c0088
-			public const int info = 2131493000;
+			// aapt resource value: 0x7f0c0084
+			public const int info = 2131492996;
 			
 			// aapt resource value: 0x7f0c002d
 			public const int left = 2131492909;
 			
-			// aapt resource value: 0x7f0c0082
-			public const int line1 = 2131492994;
+			// aapt resource value: 0x7f0c007e
+			public const int line1 = 2131492990;
 			
-			// aapt resource value: 0x7f0c0086
-			public const int line3 = 2131492998;
+			// aapt resource value: 0x7f0c0082
+			public const int line3 = 2131492994;
 			
 			// aapt resource value: 0x7f0c000a
 			public const int listMode = 2131492874;
@@ -3576,20 +3579,20 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0042
 			public const int list_item = 2131492930;
 			
-			// aapt resource value: 0x7f0c0080
-			public const int media_actions = 2131492992;
-			
-			// aapt resource value: 0x7f0c0073
-			public const int media_route_control_frame = 2131492979;
+			// aapt resource value: 0x7f0c007c
+			public const int media_actions = 2131492988;
 			
 			// aapt resource value: 0x7f0c006f
-			public const int media_route_list = 2131492975;
+			public const int media_route_control_frame = 2131492975;
 			
-			// aapt resource value: 0x7f0c0078
-			public const int media_route_volume_layout = 2131492984;
+			// aapt resource value: 0x7f0c006b
+			public const int media_route_list = 2131492971;
 			
-			// aapt resource value: 0x7f0c0079
-			public const int media_route_volume_slider = 2131492985;
+			// aapt resource value: 0x7f0c0074
+			public const int media_route_volume_layout = 2131492980;
+			
+			// aapt resource value: 0x7f0c0075
+			public const int media_route_volume_slider = 2131492981;
 			
 			// aapt resource value: 0x7f0c001b
 			public const int middle = 2131492891;
@@ -3618,8 +3621,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0027
 			public const int pin = 2131492903;
 			
-			// aapt resource value: 0x7f0c0076
-			public const int play_pause = 2131492982;
+			// aapt resource value: 0x7f0c0072
+			public const int play_pause = 2131492978;
 			
 			// aapt resource value: 0x7f0c0005
 			public const int progress_circular = 2131492869;
@@ -3633,8 +3636,8 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c002e
 			public const int right = 2131492910;
 			
-			// aapt resource value: 0x7f0c0071
-			public const int route_name = 2131492977;
+			// aapt resource value: 0x7f0c006d
+			public const int route_name = 2131492973;
 			
 			// aapt resource value: 0x7f0c0015
 			public const int screen = 2131492885;
@@ -3678,14 +3681,11 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c0065
 			public const int search_voice_btn = 2131492965;
 			
-			// aapt resource value: 0x7f0c006a
-			public const int seekbars = 2131492970;
-			
 			// aapt resource value: 0x7f0c0066
 			public const int select_dialog_listview = 2131492966;
 			
-			// aapt resource value: 0x7f0c0072
-			public const int settings = 2131492978;
+			// aapt resource value: 0x7f0c006e
+			public const int settings = 2131492974;
 			
 			// aapt resource value: 0x7f0c0051
 			public const int shortcut = 2131492945;
@@ -3720,38 +3720,38 @@ namespace GazeToSpeech.Droid
 			// aapt resource value: 0x7f0c002f
 			public const int start = 2131492911;
 			
-			// aapt resource value: 0x7f0c007f
-			public const int status_bar_latest_event_content = 2131492991;
+			// aapt resource value: 0x7f0c007b
+			public const int status_bar_latest_event_content = 2131492987;
 			
-			// aapt resource value: 0x7f0c007c
-			public const int stop = 2131492988;
+			// aapt resource value: 0x7f0c0078
+			public const int stop = 2131492984;
 			
 			// aapt resource value: 0x7f0c0063
 			public const int submit_area = 2131492963;
 			
-			// aapt resource value: 0x7f0c0077
-			public const int subtitle = 2131492983;
+			// aapt resource value: 0x7f0c0073
+			public const int subtitle = 2131492979;
 			
 			// aapt resource value: 0x7f0c000c
 			public const int tabMode = 2131492876;
 			
-			// aapt resource value: 0x7f0c0087
-			public const int text = 2131492999;
+			// aapt resource value: 0x7f0c0083
+			public const int text = 2131492995;
 			
-			// aapt resource value: 0x7f0c0085
-			public const int text2 = 2131492997;
+			// aapt resource value: 0x7f0c0081
+			public const int text2 = 2131492993;
 			
 			// aapt resource value: 0x7f0c004b
 			public const int textSpacerNoButtons = 2131492939;
 			
-			// aapt resource value: 0x7f0c0083
-			public const int time = 2131492995;
+			// aapt resource value: 0x7f0c007f
+			public const int time = 2131492991;
 			
 			// aapt resource value: 0x7f0c0044
 			public const int title = 2131492932;
 			
-			// aapt resource value: 0x7f0c0070
-			public const int title_bar = 2131492976;
+			// aapt resource value: 0x7f0c006c
+			public const int title_bar = 2131492972;
 			
 			// aapt resource value: 0x7f0c0047
 			public const int title_template = 2131492935;
@@ -3761,15 +3761,6 @@ namespace GazeToSpeech.Droid
 			
 			// aapt resource value: 0x7f0c0046
 			public const int topPanel = 2131492934;
-			
-			// aapt resource value: 0x7f0c006b
-			public const int tv1 = 2131492971;
-			
-			// aapt resource value: 0x7f0c006c
-			public const int tv2 = 2131492972;
-			
-			// aapt resource value: 0x7f0c006d
-			public const int tv3 = 2131492973;
 			
 			// aapt resource value: 0x7f0c0008
 			public const int up = 2131492872;
