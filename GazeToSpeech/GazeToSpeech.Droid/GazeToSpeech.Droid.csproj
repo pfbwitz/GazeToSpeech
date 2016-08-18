@@ -211,6 +211,14 @@
     <AndroidResource Include="Resources\drawable-xxhdpi\home.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\home_selected.png" />
     <AndroidResource Include="Resources\drawable\banner.png" />
+    <AndroidResource Include="Resources\drawable\language.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\language.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\language.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\language.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\camera.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\camera.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\camera.png" />
+    <AndroidResource Include="Resources\drawable\camera.png" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Common\Enum\" />

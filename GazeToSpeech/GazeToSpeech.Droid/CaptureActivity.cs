@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
 using GazeToSpeech.Common.Enumeration;
+using GazeToSpeech.Common.Utils;
 using GazeToSpeech.Droid.Common;
 using GazeToSpeech.Droid.Common.Helper;
 using GazeToSpeech.Droid.Common.Model;
@@ -30,7 +33,7 @@ namespace GazeToSpeech.Droid
     /// Description:    Mobile application for communication of ALS patients
     ///                 or other disabled individuals, in particular Jason Becker
     /// Author:         Peter Brachwitz
-    /// Last Update:    August 15 2016
+    /// Last Update:    August 18 2016
     /// </summary>
     [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
@@ -40,7 +43,7 @@ namespace GazeToSpeech.Droid
         public CaptureActivity()
         {
             Instance = this;
-
+            Calibrating = true;
             _captureMethod = CaptureMethod.Subset;
 
             TextToSpeechHelper = new TextToSpeechHelper(this);
@@ -51,7 +54,13 @@ namespace GazeToSpeech.Droid
 
         #region properties
 
-        #region public
+            #region public
+
+        public Direction Direction;
+
+        public int FramesPerSecond;
+
+        public bool Calibrating;
 
         public int Facing;
 
@@ -84,7 +93,9 @@ namespace GazeToSpeech.Droid
 
         #endregion
 
-        #region private
+            #region private
+
+        private bool _readyToCapture;
 
         private Mat _templateR;
         private Mat _templateL;
@@ -99,8 +110,6 @@ namespace GazeToSpeech.Droid
 
         private int _framecount;
         private DateTime? _start;
-
-        private int _framesPerSecond;
 
         private readonly int _mDetectorType = JavaDetector;
 
@@ -138,7 +147,28 @@ namespace GazeToSpeech.Droid
             _mOpenCvCameraView.SetCvCameraViewListener2(this);
 
             _mLoaderCallback = new Callback(this, _mOpenCvCameraView);
+
+            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+            Task.Run(() =>
+            {
+                while (TextToSpeechHelper.IsSpeaking)
+                {
+                }
+                RunOnUiThread(() =>
+                {
+                    var builder = new AlertDialog.Builder(this);
+                    builder.SetMessage(SpeechHelper.CalibrationInit);
+                    builder.SetPositiveButton("OK", (a, s) =>
+                    {
+                        _calibrationStart = DateTime.Now;
+                        _readyToCapture = true;
+                    });
+                    builder.Show();
+                });
+            });
         }
+
+        private DateTime _calibrationStart;
 
         protected override void OnPause()
         {
@@ -180,11 +210,9 @@ namespace GazeToSpeech.Droid
 
         private readonly List<Point> _pupils = new List<Point>();
         private int _drawCount;
-     
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
-           
             _framecount++;
             PosLeft = PosRight = null;
 
@@ -195,6 +223,9 @@ namespace GazeToSpeech.Droid
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
 
+            if (!_fpsDetermined || !_readyToCapture)
+                return MRgba;
+
             var w = MRgba.Width();
             var h = MRgba.Height();
 
@@ -202,6 +233,12 @@ namespace GazeToSpeech.Droid
                 CreateGridSubSet(w, h);
 
             //PopulateGrid();
+
+            if (Calibrating)
+            {
+                var passed = (DateTime.Now - _calibrationStart).Seconds.ToString();
+                this.PutOutlinedText(passed, 10, 10);
+            }
 
             if (_mAbsoluteFaceSize == 0)
             {
@@ -278,7 +315,7 @@ namespace GazeToSpeech.Droid
                     PopulateGrid(point);
 
                     if (ShouldAct())
-                        RunOnUiThread(() => HandleEyePosition(point));
+                        RunOnUiThread(() => HandleEyePosition(avg));
                 }
             }
             return MRgba;
@@ -286,8 +323,6 @@ namespace GazeToSpeech.Droid
         #endregion
 
         #region custom methods
-
-        
 
         /// <summary>
         /// Draw the full character-grid on screen
@@ -411,35 +446,41 @@ namespace GazeToSpeech.Droid
             {
                 new Subset
                 {
+                    Direction = Direction.TopLeft,
                     Partition = SubsetPartition.Abcd,
                     Coordinate = new Rectangle(0, 0, xSize, ySize),
                     Characters = SubsetPartition.Abcd.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
+                    Direction = Direction.TopCenter,
                     Partition = SubsetPartition.Efgh,
                     Coordinate = new Rectangle(xSize, 0, xSize, ySize),
                     Characters = SubsetPartition.Efgh.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
+                    Direction = Direction.TopRight,
                     Partition = SubsetPartition.Ijkl,
                     Coordinate = new Rectangle(xSize*2, 0, xSize, ySize),
                     Characters = SubsetPartition.Ijkl.ToString().ToCharArray().ToList()
                 },
                 new Subset
                 {
+                    Direction = Direction.BottomLeft,
                     Partition = SubsetPartition.Mnop,
                     Coordinate = new Rectangle(0, ySize , xSize, ySize),
                     Characters = SubsetPartition.Mnop.ToString().ToCharArray().ToList()
                 }, new Subset
                 {
+                    Direction = Direction.BottomCenter,
                     Partition = SubsetPartition.Qrst,
                     Coordinate = new Rectangle(xSize, ySize , xSize, ySize),
                     Characters = SubsetPartition.Qrst.ToString().ToCharArray().ToList()
                 },
                  new Subset
                 {
+                    Direction = Direction.BottomRight,
                     Partition = SubsetPartition.Uvwxyz,
                     Coordinate = new Rectangle(xSize*2, ySize, xSize, ySize),
                     Characters = SubsetPartition.Uvwxyz.ToString().ToCharArray().ToList()
@@ -455,67 +496,166 @@ namespace GazeToSpeech.Droid
         {
             try
             {
-                if (position == null || _handling)
+                if (position == null || _handling || TextToSpeechHelper.IsSpeaking)
                     return;
 
                 _handling = true;
 
-                if (_captureMethod == CaptureMethod.Subset)
+                //var centerRectangle = new Rectangle(DetectionHelper.CenterPoint.X, DetectionHelper.CenterPoint.Y, 10, 10);
+
+                var direction = Direction.Center;
+                var marginX = 10;
+                var marginY = 3;
+                var diffX = position.X - DetectionHelper.CenterPoint.X;
+                var diffY = position.Y - DetectionHelper.CenterPoint.Y;
+
+                var diffXInPixels = diffX < 0 ? diffX*-1 : diffX;
+                var diffYInPixels = diffY < 0 ? diffY*-1 : diffY;
+
+                //top-center or bottom-center
+                if (diffXInPixels <= marginX)
                 {
-                    //Determine distance between each subset and the iris-position
-                    foreach (var s in SubSets)
+                    if (diffY < 0 && diffYInPixels > marginY)
+                        direction = Direction.TopCenter;
+                    if (diffY > 0 && diffYInPixels > marginY)
+                        direction = Direction.BottomCenter;
+                }
+
+                if (Facing == CameraFacing.Front)
+                {
+                    //right, bottom-right or top-right
+                    if (diffX < 0 && diffXInPixels > marginX) 
                     {
-                        var center = new Point(s.Coordinate.X + s.Coordinate.Width/2,
-                            s.Coordinate.Y + s.Coordinate.Height/2);
-
-                        var distanceX = position.X - center.X;
-                        if (distanceX < 0)
-                            distanceX = distanceX * -1;
-
-                        var distanceY = position.Y - center.Y;
-                        if (distanceY < 0)
-                            distanceY = distanceY * -1;
-
-                        s.DistanceToPoint = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+                        if (diffY > 0 && diffYInPixels > marginY)
+                            direction = Direction.BottomRight;
+                        else if (diffY < 0 && diffYInPixels > marginY)
+                            direction = Direction.TopRight;
+                        else
+                            direction = Direction.Right;
                     }
 
-                    //the current subset is the one with the smallest distance to the iris-position
-                    _currentSubset = SubSets.Single(s => s.DistanceToPoint == SubSets.Min(s2 => s2.DistanceToPoint));
-
-                    if (_currentSubset != null)
+                    //left, bottom-left or top-left
+                    if (diffX > 0 && diffXInPixels > marginX)
                     {
-                        TextToSpeechHelper.Speak(_currentSubset.Partition.ToString().First().ToString());
-                        _handling = false;
+                        if (diffY > 0 && diffYInPixels > marginY)
+                            direction = Direction.BottomLeft;
+                        else if (diffY < 0 && diffYInPixels > marginY)
+                            direction = Direction.TopLeft;
+                        else
+                            direction = Direction.Left;
                     }
                 }
-                else if (_captureMethod == CaptureMethod.Character)
+                else
                 {
-                    _captureMethod = CaptureMethod.Subset;
-
-                    switch (_currentSubset.Partition)
+                    //right, bottom-right or top-right
+                    if (diffX > 0 && diffXInPixels > marginX)
                     {
-                        case SubsetPartition.Abcd:
-                            break;
-                        case SubsetPartition.Efgh:
-                            break;
-                        case SubsetPartition.Ijkl:
-                            break;
-                        case SubsetPartition.Mnop:
-                            break;
-                        case SubsetPartition.Qrst:
-                            break;
-                        case SubsetPartition.Uvwxyz:
-                            break;
+                        if (diffY > 0 && diffYInPixels > marginY)
+                            direction = Direction.BottomRight;
+                        else if (diffY < 0 && diffYInPixels > marginY)
+                            direction = Direction.TopRight;
+                        else
+                            direction = Direction.Right;
                     }
 
-                    CharacterBuffer.Add("P");
-                    TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                    //left, bottom-left or top-left
+                    if (diffX < 0 && diffXInPixels > marginX)
+                    {
+                        if (diffY > 0 && diffYInPixels > marginY)
+                            direction = Direction.BottomLeft;
+                        else if (diffY < 0 && diffYInPixels > marginY)
+                            direction = Direction.TopLeft;
+                        else
+                            direction = Direction.Left;
+                    }
                 }
-                else if (_captureMethod == CaptureMethod.Word)
+
+                TextToSpeechHelper.Speak(direction.ToString());
+
+                switch (direction)
                 {
-                    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
-                    CharacterBuffer.Clear();
+                    case Direction.Left:
+                        break;
+                    case Direction.Right:
+                        break;
+                    case Direction.Up:
+                        break;
+                    case Direction.Down:
+                        break;
+                    case Direction.TopLeft:
+                        break;
+                    case Direction.BottomLeft:
+                        break;
+                    case Direction.TopRight:
+                        break;
+                    case Direction.BottomRight:
+                        break;
+                    case Direction.Center:
+                        break;
+                    case Direction.TopCenter:
+                        break;
+                    case Direction.BottomCenter:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
+
+                //if (_captureMethod == CaptureMethod.Subset)
+                //{
+                //    //Determine distance between each subset and the iris-position
+                //    foreach (var s in SubSets)
+                //    {
+                //        var center = new Point(s.Coordinate.X + s.Coordinate.Width/2,
+                //            s.Coordinate.Y + s.Coordinate.Height/2);
+
+                //        var distanceX = position.X - center.X;
+                //        if (distanceX < 0)
+                //            distanceX = distanceX * -1;
+
+                //        var distanceY = position.Y - center.Y;
+                //        if (distanceY < 0)
+                //            distanceY = distanceY * -1;
+
+                //        s.DistanceToPoint = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+                //    }
+
+                //    //the current subset is the one with the smallest distance to the iris-position
+                //    _currentSubset = SubSets.Single(s => s.DistanceToPoint == SubSets.Min(s2 => s2.DistanceToPoint));
+
+                //    if (_currentSubset != null)
+                //    {
+                //        TextToSpeechHelper.Speak(_currentSubset.Partition.ToString().First().ToString());
+                //        _handling = false;
+                //    }
+                //}
+                //else if (_captureMethod == CaptureMethod.Character)
+                //{
+                //    _captureMethod = CaptureMethod.Subset;
+
+                //    switch (_currentSubset.Partition)
+                //    {
+                //        case SubsetPartition.Abcd:
+                //            break;
+                //        case SubsetPartition.Efgh:
+                //            break;
+                //        case SubsetPartition.Ijkl:
+                //            break;
+                //        case SubsetPartition.Mnop:
+                //            break;
+                //        case SubsetPartition.Qrst:
+                //            break;
+                //        case SubsetPartition.Uvwxyz:
+                //            break;
+                //    }
+
+                //    CharacterBuffer.Add("P");
+                //    TextToSpeechHelper.Speak(CharacterBuffer.Last());
+                //}
+                //else if (_captureMethod == CaptureMethod.Word)
+                //{
+                //    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
+                //    CharacterBuffer.Clear();
+                //}
             }
             catch (Exception ex)
             {
@@ -539,7 +679,7 @@ namespace GazeToSpeech.Droid
                 _start = now;
             else if (now >= _start.Value.AddSeconds(1))
             {
-                _framesPerSecond = _framecount;
+                FramesPerSecond = _framecount;
                 _fpsDetermined = true;
             }
         }
@@ -550,7 +690,10 @@ namespace GazeToSpeech.Droid
         /// <returns>bool</returns>
         private bool ShouldAct()
         {
-            if (_fpsDetermined && _framecount >= _framesPerSecond)
+            if (Calibrating)
+                return false;
+
+            if (_fpsDetermined && _framecount >= FramesPerSecond && _readyToCapture)
             {
                 _framecount = 0;
                 return true;
@@ -558,6 +701,6 @@ namespace GazeToSpeech.Droid
             return false;
         }
 
-        #endregion  
+        #endregion
     }
 }

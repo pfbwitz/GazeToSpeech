@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using GazeToSpeech.Common.Interface;
+using GazeToSpeech.Droid.Common.Helper;
 using GazeToSpeech.Droid.Implementation;
+using GazeToSpeech.Model;
 using Xamarin.Forms;
 
 
@@ -22,6 +25,11 @@ namespace GazeToSpeech.Droid.Implementation
             {
                 return "0.0";
             }
+        }
+
+        public List<Language> GetAvailableLanguages()
+        {
+            return new TextToSpeechHelper(Forms.Context).GetAvailableLanguages();
         }
     }
 }

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using Android.Speech.Tts;
+using GazeToSpeech.Model;
 
 namespace GazeToSpeech.Droid.Common.Helper
 {
@@ -15,6 +17,25 @@ namespace GazeToSpeech.Droid.Common.Helper
         public TextToSpeechHelper(CaptureActivity context)
         {
             _context = context;
+        }
+
+        public bool IsSpeaking
+        {
+            get
+            {
+                return _speaker.IsSpeaking;
+            }
+        }
+
+        public TextToSpeechHelper(Context context)
+        {
+            _speaker = new TextToSpeech(context, this);
+        }
+
+        public List<Language> GetAvailableLanguages()
+        {
+           var locales =  Java.Text.BreakIterator.GetAvailableLocales().Select(l => new Language{Code = l.ISO3Language, Name = l.DisplayLanguage});
+        return locales.ToList();
         }
 
         public void Speak(string text)

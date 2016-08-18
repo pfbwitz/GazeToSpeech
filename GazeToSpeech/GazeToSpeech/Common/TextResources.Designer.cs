@@ -62,6 +62,60 @@ namespace GazeToSpeech.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Back.
+        /// </summary>
+        internal static string LblBack {
+            get {
+                return ResourceManager.GetString("LblBack", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Calibration complete.
+        /// </summary>
+        internal static string LblCalibrationComplete {
+            get {
+                return ResourceManager.GetString("LblCalibrationComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to System will calibrate your eyes. Look straight ahead for 5 seconds..
+        /// </summary>
+        internal static string LblCalibrationInit {
+            get {
+                return ResourceManager.GetString("LblCalibrationInit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Camera facing.
+        /// </summary>
+        internal static string LblFacing {
+            get {
+                return ResourceManager.GetString("LblFacing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Front.
+        /// </summary>
+        internal static string LblFront {
+            get {
+                return ResourceManager.GetString("LblFront", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        internal static string LblLanguage {
+            get {
+                return ResourceManager.GetString("LblLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Vocal Eyes.
         /// </summary>
         internal static string TtlApp {

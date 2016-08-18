@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Android.Support.V7.Widget;
 using GazeToSpeech.Common.Enumeration;
+using GazeToSpeech.Common.Utils;
 using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
@@ -54,6 +56,8 @@ namespace GazeToSpeech.Droid.Common.Helper
         private static readonly List<Point> RightPupils = new List<Point>();
         private static int _drawCountLeft;
         private static int _drawCountRight;
+        public static Point CenterPoint { get; private set; }
+        private static List<Point> _centerpoints = new List<Point>();
 
         public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, out bool pupilFound)
         {
@@ -114,7 +118,7 @@ namespace GazeToSpeech.Droid.Common.Helper
                 //var predictPt = new Point(correct.ToArray<double>()[0], correct.ToArray<double>()[0]);
 
 
-                var frameSkip = 5;
+                var frameSkip = 10;
                 if (isLefteye && LeftPupils.Count >= frameSkip)
                 {
                     _drawCountLeft++;
@@ -145,6 +149,20 @@ namespace GazeToSpeech.Droid.Common.Helper
                 
                 if (avg != null)
                 {
+                    if (activity.Calibrating)
+                    {
+                        _centerpoints.Add(avg);
+                    }
+                    if (activity.Calibrating && _centerpoints.Count >= activity.FramesPerSecond*5)
+                    {
+                        activity.Calibrating = false;
+                        CenterPoint = new Point(_centerpoints.Average(c => c.X), _centerpoints.Average(c => c.Y));
+                        activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
+                    }
+
+                    if(CenterPoint != null)
+                        Imgproc.Circle(vyrez, CenterPoint, 10, new Scalar(255, 0, 0));
+
                     Imgproc.Circle(vyrez, avg, 10, new Scalar(255, 255, 255), 2);
                     Imgproc.Circle(vyrez, avg, 4, new Scalar(255, 255, 255), 2);
                     Imgproc.Circle(vyrez, avg, 3, new Scalar(255, 255, 255), 2);
@@ -164,8 +182,8 @@ namespace GazeToSpeech.Droid.Common.Helper
                     //Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
                     //   new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
 
-                    var x = (mmG.MinLoc.X + eyeOnlyRectangle.X - area.X) / area.Width * 100;
-                    var y = (mmG.MinLoc.Y + eyeOnlyRectangle.Y - area.Y) / area.Height * 100;
+                    var x = avg.X;//(mmG.MinLoc.X + eyeOnlyRectangle.X - area.X) / area.Width * 100;
+                    var y = avg.Y;//(mmG.MinLoc.Y + eyeOnlyRectangle.Y - area.Y) / area.Height * 100;
 
                     if (activity.Facing == CameraFacing.Back)
                     {
@@ -180,7 +198,6 @@ namespace GazeToSpeech.Droid.Common.Helper
                             activity.PosLeft = new Point(x, y);
                             activity.PutOutlinedText("X: " + (int)activity.PosLeft.X + " Y: " + (int)activity.PosLeft.Y, (int)(iris.X + 10),
                                 (int)(iris.Y + 30));
-                          
                         }
                         else
                         {

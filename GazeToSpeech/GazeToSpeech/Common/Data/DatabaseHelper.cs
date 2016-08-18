@@ -1,4 +1,5 @@
-﻿using GazeToSpeech.Model;
+﻿using GazeToSpeech.Common.Enumeration;
+using GazeToSpeech.Model;
 using SQLite.Net;
 
 namespace GazeToSpeech.Common.Data
@@ -17,7 +18,11 @@ namespace GazeToSpeech.Common.Data
 		    Connection.DropTable<User>();
 			UpdateTables();
 
-            Connection.Insert(new User());
+		    var user = new User();
+		    user.CameraFacing = CameraFacing.Back.ToString();
+		    user.Language = "en";
+
+            Connection.Insert(user);
 		}
 
 		public void UpdateTables()
