@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Android.Content;
 using Java.IO;
 using Java.Lang;
@@ -9,12 +10,13 @@ namespace GazeToSpeech.Droid.Engine
     internal class Callback : BaseLoaderCallback
     {
         private readonly CaptureActivity _activity;
-        private readonly CameraBridgeViewBase mOpenCvCameraView;
+        private readonly CameraBridgeViewBase _mOpenCvCameraView;
+
         public Callback(CaptureActivity activity, CameraBridgeViewBase view)
             : base(activity)
         {
             _activity = activity;
-            mOpenCvCameraView = view;
+            _mOpenCvCameraView = view;
         }
 
         public override void OnManagerConnected(int status)
@@ -22,71 +24,78 @@ namespace GazeToSpeech.Droid.Engine
             if (status == LoaderCallbackInterface.Success)
             {
                 JavaSystem.LoadLibrary("detection_based_tracker");
-                try
+                _mOpenCvCameraView.EnableView();
+                Task.Run(() =>
                 {
-                    File cascadeDir;
-                    using (var istr = _activity.Resources.OpenRawResource(Resource.Raw.lbpcascade_frontalface))
+                   
+                    try
                     {
-                        cascadeDir = _activity.GetDir("cascade", FileCreationMode.Private);
-                        _activity.MCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
-
-                        using (FileOutputStream os = new FileOutputStream(_activity.MCascadeFile))
+                        File cascadeDir;
+                        using (var istr = _activity.Resources.OpenRawResource(Resource.Raw.lbpcascade_frontalface))
                         {
-                            int byteRead;
-                            while ((byteRead = istr.ReadByte()) != -1)
+                            cascadeDir = _activity.GetDir("cascade", FileCreationMode.Private);
+                            _activity.MCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+
+                            using (FileOutputStream os = new FileOutputStream(_activity.MCascadeFile))
                             {
-                                os.Write(byteRead);
+                                int byteRead;
+                                while ((byteRead = istr.ReadByte()) != -1)
+                                {
+                                    os.Write(byteRead);
+                                }
                             }
                         }
-                    }
 
-                    using (var istr = _activity.Resources.OpenRawResource(Resource.Raw.haarcascade_lefteye_2splits))
-                    {
-                        cascadeDir = _activity.GetDir("cascade", FileCreationMode.Private);
-                        _activity.MCascadeFileEye = new File(cascadeDir, "haarcascade_lefteye_2splits.xml");
-
-                        using (FileOutputStream os = new FileOutputStream(_activity.MCascadeFileEye))
+                        using (var istr = _activity.Resources.OpenRawResource(Resource.Raw.haarcascade_lefteye_2splits))
                         {
-                            int byteRead;
-                            while ((byteRead = istr.ReadByte()) != -1)
-                                os.Write(byteRead);
+                            cascadeDir = _activity.GetDir("cascade", FileCreationMode.Private);
+                            _activity.MCascadeFileEye = new File(cascadeDir, "haarcascade_lefteye_2splits.xml");
+
+                            using (FileOutputStream os = new FileOutputStream(_activity.MCascadeFileEye))
+                            {
+                                int byteRead;
+                                while ((byteRead = istr.ReadByte()) != -1)
+                                    os.Write(byteRead);
+                            }
                         }
+
+                        _activity.MJavaDetector = new CascadeClassifier(_activity.MCascadeFile.AbsolutePath);
+
+                        if (_activity.MJavaDetector.Empty())
+                        {
+                            //Failed to load cascade classifier"
+                            _activity.MJavaDetector = null;
+                        }
+                        else
+                            //Loaded cascade classifier from " + _activity.MCascadeFile.AbsolutePath
+
+                            _activity.MNativeDetector = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
+
+
+                        _activity.MJavaDetectorEye = new CascadeClassifier(_activity.MCascadeFileEye.AbsolutePath);
+
+                        if (_activity.MJavaDetectorEye.Empty())
+                        {
+                            //Failed to load cascade classifier
+                            _activity.MJavaDetectorEye = null;
+                        }
+                        else
+                            //Loaded cascade classifier from " + _activity.MCascadeFileEye.AbsolutePath
+
+                            _activity.MNativeDetectorEye = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
+
+                        cascadeDir.Delete();
+
                     }
-
-                    _activity.MJavaDetector = new CascadeClassifier(_activity.MCascadeFile.AbsolutePath);
-
-                    if (_activity.MJavaDetector.Empty())
+                    catch (IOException e)
                     {
-                        //Failed to load cascade classifier"
-                        _activity.MJavaDetector = null;
+                        e.PrintStackTrace();
                     }
-                    else
-                       //Loaded cascade classifier from " + _activity.MCascadeFile.AbsolutePath
-
-                        _activity.MNativeDetector = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
-
-
-                    _activity.MJavaDetectorEye = new CascadeClassifier(_activity.MCascadeFileEye.AbsolutePath);
-
-                    if (_activity.MJavaDetectorEye.Empty())
+                    _activity.RunOnUiThread(() =>
                     {
-                        //Failed to load cascade classifier
-                        _activity.MJavaDetectorEye = null;
-                    }
-                    else
-                        //Loaded cascade classifier from " + _activity.MCascadeFileEye.AbsolutePath
-
-                        _activity.MNativeDetectorEye = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
-
-
-                    cascadeDir.Delete();
-
-                }
-                catch (IOException e)
-                {
-                    e.PrintStackTrace();
-                }
-                mOpenCvCameraView.EnableView();
+                        _activity.Running = true;
+                    });
+                });
             }
             else
                 base.OnManagerConnected(status);

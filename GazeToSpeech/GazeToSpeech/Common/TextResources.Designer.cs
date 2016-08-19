@@ -116,6 +116,15 @@ namespace GazeToSpeech.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Initializing facial detection library. This might take a while.
+        /// </summary>
+        internal static string LblLoadingSlow {
+            get {
+                return ResourceManager.GetString("LblLoadingSlow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Vocal Eyes.
         /// </summary>
         internal static string TtlApp {

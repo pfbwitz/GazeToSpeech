@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.App;
@@ -56,6 +58,8 @@ namespace GazeToSpeech.Droid
 
             #region public
 
+        public bool Running;
+
         public Direction Direction;
 
         public int FramesPerSecond;
@@ -97,8 +101,7 @@ namespace GazeToSpeech.Droid
 
         private bool _readyToCapture;
 
-        private Mat _templateR;
-        private Mat _templateL;
+        private TextView _textView;
 
         private CaptureMethod _captureMethod;
         private Subset _currentSubset;
@@ -120,6 +123,8 @@ namespace GazeToSpeech.Droid
 
         private Callback _mLoaderCallback;
 
+        private Stopwatch _stopwatch = new Stopwatch();
+
         #endregion
 
         #endregion
@@ -138,6 +143,9 @@ namespace GazeToSpeech.Droid
             _mOpenCvCameraView = FindViewById<CameraBridgeViewBase>(Resource.Id.fd_activity_surface_view);
             _mOpenCvCameraView.Visibility = ViewStates.Visible;
 
+            _stopwatch.Start();
+            _textView = FindViewById<TextView>(Resource.Id.tv1);
+
 #if DEBUG
              _mOpenCvCameraView.EnableFpsMeter();
 #endif
@@ -148,22 +156,34 @@ namespace GazeToSpeech.Droid
 
             _mLoaderCallback = new Callback(this, _mOpenCvCameraView);
 
-            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+            var progress = new ProgressDialog(this) {Indeterminate = true};
+            progress.SetProgressStyle(ProgressDialogStyle.Spinner);
+            progress.SetMessage(SpeechHelper.InitMessage);
+            progress.SetCancelable(false);
+            progress.Show();
+
             Task.Run(() =>
             {
-                while (TextToSpeechHelper.IsSpeaking)
+                while(!Running){}
+                progress.Dismiss();
+                _stopwatch.Stop();
+                TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+                Task.Run(() =>
                 {
-                }
-                RunOnUiThread(() =>
-                {
-                    var builder = new AlertDialog.Builder(this);
-                    builder.SetMessage(SpeechHelper.CalibrationInit);
-                    builder.SetPositiveButton("OK", (a, s) =>
+                    while (TextToSpeechHelper.IsSpeaking)
                     {
-                        _calibrationStart = DateTime.Now;
-                        _readyToCapture = true;
+                    }
+                    RunOnUiThread(() =>
+                    {
+                        var builder = new AlertDialog.Builder(this);
+                        builder.SetMessage(SpeechHelper.CalibrationInit);
+                        builder.SetPositiveButton("OK", (a, s) =>
+                        {
+                            _calibrationStart = DateTime.Now;
+                            _readyToCapture = true;
+                        });
+                        builder.Show();
                     });
-                    builder.Show();
                 });
             });
         }
@@ -208,20 +228,23 @@ namespace GazeToSpeech.Droid
             MRgba.Release();
         }
 
-        private readonly List<Point> _pupils = new List<Point>();
-        private int _drawCount;
-
+       
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
+            RunOnUiThread(() => _textView.Text = !Running ? _stopwatch.Elapsed.ToString() : string.Empty);
+            
+            MRgba = inputFrame.Rgba();
+            MGray = inputFrame.Gray();
+
+            if (!Running)
+                return MRgba;
+
             _framecount++;
             PosLeft = PosRight = null;
 
             var faces = new MatOfRect();
 
             DetermineFps();
-
-            MRgba = inputFrame.Rgba();
-            MGray = inputFrame.Gray();
 
             if (!_fpsDetermined || !_readyToCapture)
                 return MRgba;
@@ -232,7 +255,7 @@ namespace GazeToSpeech.Droid
             if (SubSets == null)
                 CreateGridSubSet(w, h);
 
-            //PopulateGrid();
+            PopulateGrid();
 
             if (Calibrating)
             {
@@ -274,49 +297,49 @@ namespace GazeToSpeech.Droid
                 bool pupilFoundLeft;
                 this.DetectRightEye(MJavaDetectorEye, eyeareaRight, face, 24, out pupilFoundRight);
                 this.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, face, 24, out pupilFoundLeft);
-                var positionToDraw = PosLeft ?? PosRight;
+                var positionToDraw = PosLeft;// ?? PosRight;
 
-                if (PosLeft == null)
-                {
-                    _drawCount = 0;
-                    _pupils.Clear();
-                }
+                //if (PosLeft == null)
+                //{
+                //    _drawCount = 0;
+                //    _pupils.Clear();
+                //}
 
                 if (positionToDraw == null)
                     return MRgba;
 
-                Point avg = null;
+                //Point avg = null;
 
-                var frameSkip = 5;
-                _pupils.Add(positionToDraw);
-                if (_pupils.Count >= frameSkip)
-                {
-                    _drawCount++;
-                    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
+                //var frameSkip = 5;
+                //_pupils.Add(positionToDraw);
+                //if (_pupils.Count >= frameSkip)
+                //{
+                //    _drawCount++;
+                //    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
 
-                    if (_drawCount >= frameSkip)
-                    {
-                        _drawCount = 0;
-                        _pupils.Clear();
-                    }
-                }
-                else if (_pupils.Any())
-                    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
+                //    if (_drawCount >= frameSkip)
+                //    {
+                //        _drawCount = 0;
+                //        _pupils.Clear();
+                //    }
+                //}
+                //else if (_pupils.Any())
+                //    avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
 
-                if (avg != null)
-                {
-                    var point = new Point(((avg.X/100)*w), (avg.Y/100)*h);
-                    Imgproc.Circle(MRgba, point, 15, new Scalar(255, 0, 0), 2);
-                    Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
-                    Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
+                //if (avg != null)
+                //{
+                    //var point = new Point(((avg.X/100)*w), (avg.Y/100)*h);
+                    //Imgproc.Circle(MRgba, point, 15, new Scalar(255, 0, 0), 2);
+                    //Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
+                    //Imgproc.Circle(MRgba, point, 10, new Scalar(255, 0, 0), 2);
 
-                    this.PutOutlinedText("X: " + point.X + " Y: " + point.Y, (int) (point.X + 30), (int) (point.Y + 30));
+                    //this.PutOutlinedText("X: " + point.X + " Y: " + point.Y, (int) (point.X + 30), (int) (point.Y + 30));
 
-                    PopulateGrid(point);
+                    //PopulateGrid(point);
 
                     if (ShouldAct())
-                        RunOnUiThread(() => HandleEyePosition(avg));
-                }
+                        RunOnUiThread(() => HandleEyePosition(positionToDraw));
+                //}
             }
             return MRgba;
         }
@@ -367,56 +390,56 @@ namespace GazeToSpeech.Droid
                 //if (!rect.Coordinate.Contains((int)position.X, (int)position.Y))
                 //    return;
 
-                Rect closestRect = null;
-                double? distance = null;
-                var closestLetter = string.Empty;
-                for (var i = 0; i < 3; i++)
-                {
-                    var rect1 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
-                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height));
-                    var rect2 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
-                       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height));
-                    var rect3 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
-                      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height));
+                //Rect closestRect = null;
+                //double? distance = null;
+                //var closestLetter = string.Empty;
+                //for (var i = 0; i < 3; i++)
+                //{
+                //    var rect1 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
+                //      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height));
+                //    var rect2 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
+                //       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height));
+                //    var rect3 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
+                //      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height));
 
-                    //var c1 = color;
-                    //var c2 = color;
-                    //var c3 = color;
+                //    //var c1 = color;
+                //    //var c2 = color;
+                //    //var c3 = color;
 
-                    if (position != null)
-                    {
-                        var distance1 = GetDistance(position, new Point(rect1.X + rect1.Width / 2, rect1.Y + rect1.Height / 2));
-                        var distance2 = GetDistance(position, new Point(rect2.X + rect2.Width / 2, rect2.Y + rect2.Height / 2));
-                        var distance3 = GetDistance(position, new Point(rect3.X + rect3.Width / 2, rect3.Y + rect3.Height / 2));
-                        var d = new Dictionary<Rect, double>
-                        {
-                            {rect1, distance1},
-                            {rect2, distance2},
-                            {rect3, distance3}
-                        };
-                        var smallestDistance = d.Min(v => v.Value);
-                        var c = d.Single(v => v.Value == smallestDistance).Key;
-                        ;
-                        if (!distance.HasValue || smallestDistance < distance)
-                        {
-                            distance = smallestDistance;
-                            closestRect = c;
-                            //closestLetter = rect.Partition.ToString().Single(p => p.ToString()
-                            //    .ToUpper() == "A").ToString();
-                        }
-                    }
+                //    if (position != null)
+                //    {
+                //        var distance1 = GetDistance(position, new Point(rect1.X + rect1.Width / 2, rect1.Y + rect1.Height / 2));
+                //        var distance2 = GetDistance(position, new Point(rect2.X + rect2.Width / 2, rect2.Y + rect2.Height / 2));
+                //        var distance3 = GetDistance(position, new Point(rect3.X + rect3.Width / 2, rect3.Y + rect3.Height / 2));
+                //        var d = new Dictionary<Rect, double>
+                //        {
+                //            {rect1, distance1},
+                //            {rect2, distance2},
+                //            {rect3, distance3}
+                //        };
+                //        var smallestDistance = d.Min(v => v.Value);
+                //        var c = d.Single(v => v.Value == smallestDistance).Key;
+                //        ;
+                //        if (!distance.HasValue || smallestDistance < distance)
+                //        {
+                //            distance = smallestDistance;
+                //            closestRect = c;
+                //            //closestLetter = rect.Partition.ToString().Single(p => p.ToString()
+                //            //    .ToUpper() == "A").ToString();
+                //        }
+                //    }
 
-                    //Imgproc.Rectangle(MRgba, rect1.Tl(), rect1.Br(), c1, 2); //row 1
-                    //Imgproc.Rectangle(MRgba, rect2.Tl(), rect2.Br(), c2, 2); //row 2
-                    //Imgproc.Rectangle(MRgba, rect3.Tl(), rect3.Br(), c3, 2); //row 3
-                }
+                //    //Imgproc.Rectangle(MRgba, rect1.Tl(), rect1.Br(), c1, 2); //row 1
+                //    //Imgproc.Rectangle(MRgba, rect2.Tl(), rect2.Br(), c2, 2); //row 2
+                //    //Imgproc.Rectangle(MRgba, rect3.Tl(), rect3.Br(), c3, 2); //row 3
+                //}
 
-                Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
-                   new Point((rect.Coordinate.X + rect.Coordinate.Width),
-                       (rect.Coordinate.Y + rect.Coordinate.Height)), scalar, 5);
+                //Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
+                //   new Point((rect.Coordinate.X + rect.Coordinate.Width),
+                //       (rect.Coordinate.Y + rect.Coordinate.Height)), scalar, 5);
 
-                if (closestRect != null)
-                    Imgproc.Rectangle(MRgba, closestRect.Tl(), closestRect.Br(), new Scalar(255, 0, 0), 2);
+                //if (closestRect != null)
+                //    Imgproc.Rectangle(MRgba, closestRect.Tl(), closestRect.Br(), new Scalar(255, 0, 0), 2);
             }
         }
 
@@ -499,15 +522,15 @@ namespace GazeToSpeech.Droid
                 if (position == null || _handling || TextToSpeechHelper.IsSpeaking)
                     return;
 
+                var marginX = 5;
+                var marginY = 3;
                 _handling = true;
 
-                //var centerRectangle = new Rectangle(DetectionHelper.CenterPoint.X, DetectionHelper.CenterPoint.Y, 10, 10);
-
                 var direction = Direction.Center;
-                var marginX = 10;
-                var marginY = 3;
-                var diffX = position.X - DetectionHelper.CenterPoint.X;
-                var diffY = position.Y - DetectionHelper.CenterPoint.Y;
+               
+                var centerpoint = DetectionHelper.CenterPoint;
+                var diffX = position.X - centerpoint.X;
+                var diffY = position.Y - centerpoint.Y;
 
                 var diffXInPixels = diffX < 0 ? diffX*-1 : diffX;
                 var diffYInPixels = diffY < 0 ? diffY*-1 : diffY;

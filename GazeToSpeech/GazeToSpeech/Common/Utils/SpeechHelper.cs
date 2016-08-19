@@ -11,5 +11,10 @@
         {
             get { return TextResources.LblCalibrationInit; }
         }
+
+        public static string InitMessage
+        {
+            get { return TextResources.LblLoadingSlow; }
+        }
     }
 }

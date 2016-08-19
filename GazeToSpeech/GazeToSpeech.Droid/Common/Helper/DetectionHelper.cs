@@ -90,7 +90,7 @@ namespace GazeToSpeech.Droid.Common.Helper
                 var eye = eyesArray[i];
                 eye.X = area.X + eye.X;
                 eye.Y = area.Y + eye.Y;
-                //Imgproc.Rectangle(activity.MRgba, eye.Tl(), eye.Br(), new Scalar(0, 255, 255), 3);
+               
                 var eyeOnlyRectangle = new Rect((int)eye.Tl().X,
                         (int)(eye.Tl().Y + eye.Height * 0.4), eye.Width,
                         (int)(eye.Height * 0.6));
@@ -110,21 +110,12 @@ namespace GazeToSpeech.Droid.Common.Helper
 
                 Point avg = null;
 
-                //// First predict, to update the internal statePre variable
-                // var filter = _kalmanFilter ?? (_kalmanFilter = new KalmanFilter());
-                // filter.Set_statePre(mRoi);
-                //var prediction = filter.Predict();
-                //var correct = filter.Correct(prediction);
-                //var predictPt = new Point(correct.ToArray<double>()[0], correct.ToArray<double>()[0]);
-
-
-                var frameSkip = 10;
-                if (isLefteye && LeftPupils.Count >= frameSkip)
+                if (isLefteye && LeftPupils.Count >= activity.FramesPerSecond * 5)
                 {
                     _drawCountLeft++;
                     avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
 
-                    if (_drawCountLeft >= frameSkip)
+                    if (_drawCountLeft >= activity.FramesPerSecond)
                     {
                         _drawCountLeft = 0;
                         LeftPupils.Clear();
@@ -132,13 +123,13 @@ namespace GazeToSpeech.Droid.Common.Helper
                 }
                 else if(isLefteye && LeftPupils.Any())
                     avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
-                
-                if (!isLefteye && RightPupils.Count >= frameSkip)
+
+                if (!isLefteye && RightPupils.Count >= activity.FramesPerSecond)
                 {
                     _drawCountRight++;
                     avg = new Point(RightPupils.Average(p => p.X), RightPupils.Average(p => p.Y));
 
-                    if (_drawCountRight >= frameSkip)
+                    if (_drawCountRight >= activity.FramesPerSecond)
                     {
                         _drawCountRight = 0;
                         RightPupils.Clear();
@@ -170,50 +161,32 @@ namespace GazeToSpeech.Droid.Common.Helper
                     iris.X = avg.X + eyeOnlyRectangle.X;
                     iris.Y = avg.Y + eyeOnlyRectangle.Y;
 
-                    //rect
-                    //Imgproc.Line(activity.MRgba, new Point(iris.X, area.Y),
-                    //new Point(iris.X, area.Y + area.Height), new Scalar(255, 0, 0));
-                    //Imgproc.Line(activity.MRgba, new Point(area.X, iris.Y),
-                    //   new Point(area.X + area.Width, iris.Y), new Scalar(255, 0, 0));
-
-                    //eye
-                    //Imgproc.Line(activity.MRgba, new Point(iris.X, eyeOnlyRectangle.Y),
-                    //    new Point(iris.X, eyeOnlyRectangle.Y + eyeOnlyRectangle.Height), new Scalar(255, 255, 255));
-                    //Imgproc.Line(activity.MRgba, new Point(eyeOnlyRectangle.X, iris.Y),
-                    //   new Point(eyeOnlyRectangle.X + eyeOnlyRectangle.Width, iris.Y), new Scalar(255, 255, 255));
-
-                    var x = avg.X;//(mmG.MinLoc.X + eyeOnlyRectangle.X - area.X) / area.Width * 100;
-                    var y = avg.Y;//(mmG.MinLoc.Y + eyeOnlyRectangle.Y - area.Y) / area.Height * 100;
-
                     if (activity.Facing == CameraFacing.Back)
                     {
-                        x = 100 - x;
-                        y = 100 - y;
+                        avg.X = 100 - avg.X;
+                        avg.Y = 100 - avg.Y;
                     }
 
                     try
                     {
                         if (isLefteye)
                         {
-                            activity.PosLeft = new Point(x, y);
+                            activity.PosLeft = avg;
                             activity.PutOutlinedText("X: " + (int)activity.PosLeft.X + " Y: " + (int)activity.PosLeft.Y, (int)(iris.X + 10),
                                 (int)(iris.Y + 30));
                         }
                         else
                         {
-                            activity.PosRight = new Point(x, y);
+                            activity.PosRight = avg;
                             activity.PutOutlinedText("X: " + (int)activity.PosRight.X + " Y: " + (int)activity.PosRight.Y, (int)(iris.X + 10),
                                (int)(iris.Y + 50));
                         }
                     }
                     catch { }
-
-                    var eyeTemplate = new Rect((int)iris.X - size / 2, (int)iris.Y - size / 2, size, size);
-                    template = activity.MGray.Submat(eyeTemplate).Clone();
+                    
+                    //var eyeTemplate = new Rect((int)iris.X - size / 2, (int)iris.Y - size / 2, size, size);
+                    //template = activity.MGray.Submat(eyeTemplate).Clone();
                 }
-               
-                
-
                 return template;
             }
             return template;
