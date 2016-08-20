@@ -4,14 +4,12 @@
     {
         Left,
         Right,
-        Up,
-        Down,
+        Top,
+        Bottom,
         TopLeft,
         BottomLeft,
         TopRight,
         BottomRight,
-        Center,
-        TopCenter,
-        BottomCenter
+        Center
     }
 }

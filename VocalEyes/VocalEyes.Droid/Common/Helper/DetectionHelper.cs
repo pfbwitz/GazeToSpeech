@@ -10,18 +10,18 @@ using VocalEyes.Droid.Common.Model;
 
 namespace VocalEyes.Droid.Common.Helper
 {
-    public static class DetectionHelper
+    public class DetectionHelper
     {
         public const int JavaDetector = 0;
-        //private static readonly List<Point> LeftPupils = new List<Point>();
-        //private static readonly List<Point> RightPupils = new List<Point>();
-        public static Point CenterPoint { get; private set; }
-        private static readonly List<Point> Centerpoints = new List<Point>();
+       
+        public Point CenterPoint { get; private set; }
 
-        private static Pupil _leftEye;
-        private static Pupil _righteye;
+        private readonly List<Point> _centerpoints = new List<Point>();
 
-        public static Rect GetNearestFace(IEnumerable<Rect> faces)
+        private Pupil _leftEye;
+        private Pupil _righteye;
+
+        public Rect GetNearestFace(IEnumerable<Rect> faces)
         {
             Rect face = null;
             foreach (var f in faces.ToArray())
@@ -32,33 +32,33 @@ namespace VocalEyes.Droid.Common.Helper
             return face;
         }
 
-        public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
+        public Mat DetectLeftEye(CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
         {
             if (_leftEye == null)
                 _leftEye = new Pupil(2);
-            return activity.DetectEye(clasificator, area, face, size, true);
+            return DetectEye(activity, clasificator, area, face, size, true);
         }
 
-        public static Mat DetectRightEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
+        public Mat DetectRightEye(CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
         {
             if (_righteye == null)
                 _righteye = new Pupil(2);
-            return activity.DetectEye(clasificator, area, face, size, false);
+            return DetectEye(activity, clasificator, area, face, size, false);
         }
 
-        private static void Calibrate(CaptureActivity activity, Point point)
+        private void Calibrate(CaptureActivity activity, Point point)
         {
             if (activity.Calibrating)
-                Centerpoints.Add(point);
-            if (activity.Calibrating && Centerpoints.Count >= activity.FramesPerSecond * 5)
+                _centerpoints.Add(point);
+            if (activity.Calibrating && _centerpoints.Count >= activity.FramesPerSecond * 5)
             {
                 activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
                 activity.Calibrating = false;
-                CenterPoint = new Point(Centerpoints.Average(c => c.X), Centerpoints.Average(c => c.Y));
+                CenterPoint = new Point(_centerpoints.Average(c => c.X), _centerpoints.Average(c => c.Y));
             }
         }
 
-        private static void DrawCenterPoint(CaptureActivity activity, Rect area, Rect eyeOnlyRectangle)
+        private void DrawCenterPoint(CaptureActivity activity, Rect area, Rect eyeOnlyRectangle)
         {
             if (CenterPoint != null)
             {
@@ -68,7 +68,7 @@ namespace VocalEyes.Droid.Common.Helper
             }
         }
 
-        public static Mat DetectEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, 
+        public Mat DetectEye(CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, 
             bool isLefteye)
         {
             var template = new Mat();

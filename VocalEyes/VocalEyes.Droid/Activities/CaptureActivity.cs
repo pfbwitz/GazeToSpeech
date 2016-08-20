@@ -41,8 +41,9 @@ namespace VocalEyes.Droid.Activities
         {
             Instance = this;
             Calibrating = true;
+            CreateGridSubSet();
             _captureMethod = CaptureMethod.Subset;
-
+            _detectionHelper = new DetectionHelper();
             TextToSpeechHelper = new TextToSpeechHelper(this);
             var mDetectorName = new string[2];
             mDetectorName[JavaDetector] = "Java";
@@ -93,9 +94,11 @@ namespace VocalEyes.Droid.Activities
         public TextView TextViewTimer;
         public Stopwatch Stopwatch = new Stopwatch();
 
-        #endregion
+            #endregion
 
             #region private
+
+        private readonly DetectionHelper _detectionHelper;
 
         private bool _readyToCapture;
 
@@ -119,9 +122,7 @@ namespace VocalEyes.Droid.Activities
 
         private Callback _mLoaderCallback;
 
-      
-
-        #endregion
+            #endregion
 
         #endregion
 
@@ -171,22 +172,11 @@ namespace VocalEyes.Droid.Activities
                         TextViewTimer.Text = string.Empty;
                         _progress.Dismiss();
                         Stopwatch.Stop();
-                        //TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
                         FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
                     });
 
                     await Task.Run(() =>
                     {
-                        //try
-                        //{
-                        //    while (TextToSpeechHelper.IsSpeaking)
-                        //    {
-                        //    }
-                        //}
-                        //catch
-                        //{
-                        //}
-
                         RunOnUiThread(() =>
                         {
                             try
@@ -277,12 +267,6 @@ namespace VocalEyes.Droid.Activities
             if(_rightEyeArea == null)
                 _rightEyeArea = new EyeArea(2);
 
-            var w = MRgba.Width();
-            var h = MRgba.Height();
-
-            if (SubSets == null)
-                CreateGridSubSet(w, h);
-
             if (Calibrating)
             {
                 var passed = (DateTime.Now - _calibrationStart).Seconds.ToString();
@@ -307,7 +291,7 @@ namespace VocalEyes.Droid.Activities
             else if (_mDetectorType == NativeDetector && MNativeDetector != null)
                 MNativeDetector.Detect(MGray, faces);
 
-            var face = DetectionHelper.GetNearestFace(faces.ToArray());
+            var face = _detectionHelper.GetNearestFace(faces.ToArray());
 
             if (face != null)
             {
@@ -319,14 +303,14 @@ namespace VocalEyes.Droid.Activities
                 Imgproc.Rectangle(MRgba, eyeareaLeft.Tl(), eyeareaLeft.Br(), new Scalar(255, 0, 0, 255), 2);
                 Imgproc.Rectangle(MRgba, eyeareaRight.Tl(), eyeareaRight.Br(), new Scalar(255, 0, 0, 255), 2);
 
-                this.DetectRightEye(MJavaDetectorEye, eyeareaRight, face, 24);
-                this.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, face, 24);
+                _detectionHelper.DetectRightEye(this, MJavaDetectorEye, eyeareaRight, face, 24);
+                _detectionHelper.DetectLeftEye(this, MJavaDetectorEye, eyeareaLeft, face, 24);
                 var positionToDraw = PosLeft;
 
                 if (positionToDraw == null)
                     return MRgba;
 
-                if(DetectionHelper.CenterPoint != null)
+                if(_detectionHelper.CenterPoint != null)
                     PopulateGrid(GetDirection(positionToDraw));
 
                 if (ShouldAct())
@@ -361,109 +345,24 @@ namespace VocalEyes.Droid.Activities
                         rect.X = (MRgba.Width() / 3) * 2;
                         rect.Y = MRgba.Height() / 2;
                         break;
-                    case Direction.TopCenter:
+                    case Direction.Top:
                         rect.X = MRgba.Width() / 3;
                         break;
-                    case Direction.BottomCenter:
+                    case Direction.Bottom:
                         rect.X = MRgba.Width()/3;
                         rect.Y = MRgba.Height() / 2;
                         break;
                 }
                 Imgproc.Rectangle(MRgba, rect.Tl(), rect.Br(), new Scalar(255, 0, 0), 2);
             }
-            
-           
-            //var scalar = new Scalar(0, 255, 0);
-            ////absolute positioning in screen
-            //foreach (var rect in SubSets)
-            //{
-            //    //if (rect.Coordinate.X > 0 && rect.Coordinate.Y > 0)
-            //    //{
-            //    //    var t = 0;
-            //    //}
-            //    //if (!rect.Coordinate.Contains((int) position.X, (int) position.Y))
-            //    //    return;
-            //    var width = rect.Coordinate.Width / 3;
-            //    var height = rect.Coordinate.Height / 3;
-
-            //    var color = new Scalar(255, 255, 255, 50);
-            //    this.PutOutlinedText(rect.Characters[0].ToString(), rect.Coordinate.X + width / 2 - 25, 25 +
-            //        rect.Coordinate.Y + rect.Coordinate.Height / 2, 5, color); //A E I M Q U
-
-            //    this.PutOutlinedText(rect.Characters[2].ToString(), rect.Coordinate.X + rect.Coordinate.Width - width / 2 - 25, 25 +
-            //       rect.Coordinate.Y + rect.Coordinate.Height / 2, 5, color); //C G K O S W
-
-            //    this.PutOutlinedText(rect.Characters[1].ToString(), rect.Coordinate.X + rect.Coordinate.Width / 2 - 10,
-            //      rect.Coordinate.Y + height / 2, 5, color); //B
-
-            //    this.PutOutlinedText(rect.Characters[3].ToString(), rect.Coordinate.X + rect.Coordinate.Width / 2 - 10,
-            //    rect.Coordinate.Y + rect.Coordinate.Height - height / 2, 5, color); //D H L P T X
-
-            //    if (rect.Characters.Count == 6)
-            //    {
-            //        this.PutOutlinedText(rect.Characters[4].ToString(), rect.Coordinate.X + width / 2 - 25,
-            //           rect.Coordinate.Y + rect.Coordinate.Height - 10, 5, color); //Y
-
-            //        this.PutOutlinedText(rect.Characters[5].ToString(), rect.Coordinate.X + rect.Coordinate.Width - width / 2 - 25,
-            //            rect.Coordinate.Y + rect.Coordinate.Height - 10, 5, color); //Z
-            //    }
-
-            //    //if (!rect.Coordinate.Contains((int)position.X, (int)position.Y))
-            //    //    return;
-
-            //    //Rect closestRect = null;
-            //    //double? distance = null;
-            //    //var closestLetter = string.Empty;
-            //    //for (var i = 0; i < 3; i++)
-            //    //{
-            //    //    var rect1 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y),
-            //    //      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height));
-            //    //    var rect2 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height),
-            //    //       new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height));
-            //    //    var rect3 = new Rect(new Point(rect.Coordinate.X + (width * i), rect.Coordinate.Y + height + height),
-            //    //      new Point(rect.Coordinate.X + (width * (i + 1)), rect.Coordinate.Y + height + height + height));
-
-            //    //    //var c1 = color;
-            //    //    //var c2 = color;
-            //    //    //var c3 = color;
-
-            //    //    if (position != null)
-            //    //    {
-            //    //        var distance1 = GetDistance(position, new Point(rect1.X + rect1.Width / 2, rect1.Y + rect1.Height / 2));
-            //    //        var distance2 = GetDistance(position, new Point(rect2.X + rect2.Width / 2, rect2.Y + rect2.Height / 2));
-            //    //        var distance3 = GetDistance(position, new Point(rect3.X + rect3.Width / 2, rect3.Y + rect3.Height / 2));
-            //    //        var d = new Dictionary<Rect, double>
-            //    //        {
-            //    //            {rect1, distance1},
-            //    //            {rect2, distance2},
-            //    //            {rect3, distance3}
-            //    //        };
-            //    //        var smallestDistance = d.Min(v => v.Value);
-            //    //        var c = d.Single(v => v.Value == smallestDistance).Key;
-            //    //        ;
-            //    //        if (!distance.HasValue || smallestDistance < distance)
-            //    //        {
-            //    //            distance = smallestDistance;
-            //    //            closestRect = c;
-            //    //            //closestLetter = rect.Partition.ToString().Single(p => p.ToString()
-            //    //            //    .ToUpper() == "A").ToString();
-            //    //        }
-            //    //    }
-
-            //    //    //Imgproc.Rectangle(MRgba, rect1.Tl(), rect1.Br(), c1, 2); //row 1
-            //    //    //Imgproc.Rectangle(MRgba, rect2.Tl(), rect2.Br(), c2, 2); //row 2
-            //    //    //Imgproc.Rectangle(MRgba, rect3.Tl(), rect3.Br(), c3, 2); //row 3
-            //    //}
-
-            //    //Imgproc.Rectangle(MRgba, new Point(rect.Coordinate.X, rect.Coordinate.Y),
-            //    //   new Point((rect.Coordinate.X + rect.Coordinate.Width),
-            //    //       (rect.Coordinate.Y + rect.Coordinate.Height)), scalar, 5);
-
-            //    //if (closestRect != null)
-            //    //    Imgproc.Rectangle(MRgba, closestRect.Tl(), closestRect.Br(), new Scalar(255, 0, 0), 2);
-            //}
         }
 
+        /// <summary>
+        /// Determine the absolute distance between 2 points
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         private double GetDistance(Point a, Point b)
         {
             var distanceX = a.X - b.X;
@@ -482,39 +381,25 @@ namespace VocalEyes.Droid.Activities
         /// a subset of characters. Subsequently, the next measured position can be mapped to a single 
         /// letter in the subset or the end of a word
         /// </summary>
-        private void CreateGridSubSet(int width, int height)
+        private void CreateGridSubSet()
         {
-            var ySize = height/2;
-            var xSize = width/3;
             SubSets = new List<Subset>
             {
-                new Subset
-                {
-                    Direction = Direction.TopLeft, Partition = SubsetPartition.Abcd, Coordinate = new Rectangle(0, 0, xSize, ySize), Characters = SubsetPartition.Abcd.ToString().ToCharArray().ToList()
-                },
-                new Subset
-                {
-                    Direction = Direction.TopCenter, Partition = SubsetPartition.Efgh, Coordinate = new Rectangle(xSize, 0, xSize, ySize), Characters = SubsetPartition.Efgh.ToString().ToCharArray().ToList()
-                },
-                new Subset
-                {
-                    Direction = Direction.TopRight, Partition = SubsetPartition.Ijkl, Coordinate = new Rectangle(xSize*2, 0, xSize, ySize), Characters = SubsetPartition.Ijkl.ToString().ToCharArray().ToList()
-                },
-                new Subset
-                {
-                    Direction = Direction.BottomLeft, Partition = SubsetPartition.Mnop, Coordinate = new Rectangle(0, ySize, xSize, ySize), Characters = SubsetPartition.Mnop.ToString().ToCharArray().ToList()
-                },
-                new Subset
-                {
-                    Direction = Direction.BottomCenter, Partition = SubsetPartition.Qrst, Coordinate = new Rectangle(xSize, ySize, xSize, ySize), Characters = SubsetPartition.Qrst.ToString().ToCharArray().ToList()
-                },
-                new Subset
-                {
-                    Direction = Direction.BottomRight, Partition = SubsetPartition.Uvwxyz, Coordinate = new Rectangle(xSize*2, ySize, xSize, ySize), Characters = SubsetPartition.Uvwxyz.ToString().ToCharArray().ToList()
-                }
+                new Subset{ Direction = Direction.TopLeft, Partition = SubsetPartition.Abcd },
+                new Subset{ Direction = Direction.Top, Partition = SubsetPartition.Efgh },
+                new Subset{ Direction = Direction.TopRight, Partition = SubsetPartition.Ijkl },
+                new Subset{ Direction = Direction.BottomLeft, Partition = SubsetPartition.Mnop },
+                new Subset{ Direction = Direction.Bottom, Partition = SubsetPartition.Qrst },
+                new Subset{ Direction = Direction.BottomRight, Partition = SubsetPartition.Uvwxyz }
             };
         }
 
+        /// <summary>
+        /// Compare the pupil position and the center position 
+        /// and determine the direction of the pupil
+        /// </summary>
+        /// <param name="point">pupil position</param>
+        /// <returns>Direction of pupil</returns>
         private Direction GetDirection(Point point)
         {
             var marginX = 10;
@@ -523,9 +408,11 @@ namespace VocalEyes.Droid.Activities
 
             var direction = Direction.Center;
 
-            var centerpoint = DetectionHelper.CenterPoint;
+            var centerpoint = _detectionHelper.CenterPoint;
             var diffX = point.X - centerpoint.X;
             var diffY = point.Y - centerpoint.Y;
+
+            var distance = GetDistance(point, _detectionHelper.CenterPoint);
 
             var diffXInPixels = diffX < 0 ? diffX * -1 : diffX;
             var diffYInPixels = diffY < 0 ? diffY * -1 : diffY;
@@ -534,9 +421,9 @@ namespace VocalEyes.Droid.Activities
             if (diffXInPixels <= marginX)
             {
                 if (diffY < 0 && diffYInPixels > marginY)
-                    direction = Direction.TopCenter;
+                    direction = Direction.Top;
                 if (diffY > 0 && diffYInPixels > marginY)
-                    direction = Direction.BottomCenter;
+                    direction = Direction.Bottom;
             }
 
             if (Facing == CameraFacing.Front)
@@ -608,62 +495,25 @@ namespace VocalEyes.Droid.Activities
 
                 TextToSpeechHelper.Speak(direction.ToString());
 
-                //if (_captureMethod == CaptureMethod.Subset)
-                //{
-                //    //Determine distance between each subset and the iris-position
-                //    foreach (var s in SubSets)
-                //    {
-                //        var center = new Point(s.Coordinate.X + s.Coordinate.Width/2,
-                //            s.Coordinate.Y + s.Coordinate.Height/2);
+                if (_captureMethod == CaptureMethod.Subset)
+                {
+                    _currentSubset = SubSets.SingleOrDefault(s => s.Direction == direction);
+                    if (_currentSubset == null)
+                        return;
 
-                //        var distanceX = position.X - center.X;
-                //        if (distanceX < 0)
-                //            distanceX = distanceX * -1;
-
-                //        var distanceY = position.Y - center.Y;
-                //        if (distanceY < 0)
-                //            distanceY = distanceY * -1;
-
-                //        s.DistanceToPoint = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
-                //    }
-
-                //    //the current subset is the one with the smallest distance to the iris-position
-                //    _currentSubset = SubSets.Single(s => s.DistanceToPoint == SubSets.Min(s2 => s2.DistanceToPoint));
-
-                //    if (_currentSubset != null)
-                //    {
-                //        TextToSpeechHelper.Speak(_currentSubset.Partition.ToString().First().ToString());
-                //        _handling = false;
-                //    }
-                //}
-                //else if (_captureMethod == CaptureMethod.Character)
-                //{
-                //    _captureMethod = CaptureMethod.Subset;
-
-                //    switch (_currentSubset.Partition)
-                //    {
-                //        case SubsetPartition.Abcd:
-                //            break;
-                //        case SubsetPartition.Efgh:
-                //            break;
-                //        case SubsetPartition.Ijkl:
-                //            break;
-                //        case SubsetPartition.Mnop:
-                //            break;
-                //        case SubsetPartition.Qrst:
-                //            break;
-                //        case SubsetPartition.Uvwxyz:
-                //            break;
-                //    }
-
-                //    CharacterBuffer.Add("P");
-                //    TextToSpeechHelper.Speak(CharacterBuffer.Last());
-                //}
-                //else if (_captureMethod == CaptureMethod.Word)
-                //{
-                //    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
-                //    CharacterBuffer.Clear();
-                //}
+                    TextToSpeechHelper.Speak(direction.ToString());
+                    _captureMethod = CaptureMethod.Character;
+                }
+                else if (_captureMethod == CaptureMethod.Character)
+                {
+                    var character = _currentSubset.GetCharacter(direction);
+                    CharacterBuffer.Add(character);
+                }
+                else
+                {
+                    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
+                    CharacterBuffer.Clear();
+                }
             }
             catch (Exception ex)
             {

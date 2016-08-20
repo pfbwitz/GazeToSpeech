@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenCV.Core;
-using VocalEyes.Droid.Activities;
 
 namespace VocalEyes.Droid.Common.Model
 {
