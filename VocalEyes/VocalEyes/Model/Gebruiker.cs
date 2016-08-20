@@ -9,6 +9,6 @@ namespace VocalEyes.Model
         public string Language { get; set; }
 
         [Column("CAMERAFACING")]
-        public string CameraFacing { get; set; }
+        public int CameraFacing { get; set; }
     }
 }

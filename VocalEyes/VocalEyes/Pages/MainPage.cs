@@ -57,8 +57,9 @@ namespace VocalEyes.Pages
                 {
                     Children =
                     {
-                        new Image{Source = "banner.jpg", Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.FillAndExpand},
-                        _list, version
+                        new Image{Source = "banner.jpg", Aspect = Aspect.AspectFill},
+                        _list, 
+                        version
                     }
                 }
             };

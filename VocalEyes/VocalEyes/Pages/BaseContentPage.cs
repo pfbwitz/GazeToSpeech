@@ -3,9 +3,9 @@ using Xamarin.Forms;
 
 namespace VocalEyes.Pages
 {
-    public abstract class CustomPage : ContentPage, IPage
+    public abstract class BaseContentPage : ContentPage, IPage
     {
-        protected CustomPage()
+        protected BaseContentPage()
         {
             Padding = new Thickness(5);
             LoadMe();

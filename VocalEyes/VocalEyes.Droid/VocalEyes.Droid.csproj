@@ -113,8 +113,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <AndroidAsset Include="Assets\local.html" />
     <Compile Include="Common\Model\EyeArea.cs" />
     <Compile Include="Common\Model\Pupil.cs" />
+    <Compile Include="Implementation\ImageHelper.cs" />
     <Compile Include="Implementation\DeviceHelper.cs" />
     <Compile Include="Implementation\SqliteHelper.cs" />
     <Compile Include="Implementation\NativeOpenCvEngine.cs" />
@@ -143,9 +145,9 @@
     <AndroidNativeLibrary Include="lib\x86_64\libmixed_sample.so" />
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
-    <None Include="Assets\AboutAssets.txt" />
     <AndroidResource Include="Resources\layout\face_detect_surface_view.axml" />
     <AndroidResource Include="Resources\layout\Main.axml" />
+    <AndroidResource Include="Resources\raw\VocalEyesCommunicate.pdf" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\icon.png" />
@@ -223,6 +225,8 @@
     <AndroidResource Include="Resources\drawable\camera.png" />
     <AndroidResource Include="Resources\drawable\overlay.png" />
     <AndroidResource Include="Resources\raw\haarcascade_mcs_mouth.xml" />
+    <AndroidResource Include="Resources\drawable\becker_banner.jpg" />
+    <AndroidResource Include="Resources\drawable\becker_expl.jpg" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />

@@ -45,6 +45,7 @@
     <Compile Include="Common\Enumeration\Direction.cs" />
     <Compile Include="Common\Enumeration\MatchingMethod.cs" />
     <Compile Include="Common\Enumeration\SubsetPartition.cs" />
+    <Compile Include="Common\Interface\IImageHelper.cs" />
     <Compile Include="Common\Interface\IDeviceHelper.cs" />
     <Compile Include="Common\Interface\ISqliteHelper.cs" />
     <Compile Include="Common\TextResources.Designer.cs">
@@ -62,7 +63,7 @@
     <Compile Include="Common\Interface\IBaseModel.cs" />
     <Compile Include="Model\Language.cs" />
     <Compile Include="Pages\CapturePage.cs" />
-    <Compile Include="Pages\CustomPage.cs" />
+    <Compile Include="Pages\BaseContentPage.cs" />
     <Compile Include="Pages\HomePage.cs" />
     <Compile Include="Common\Interface\IPage.cs" />
     <Compile Include="Pages\MainPage.cs" />

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Android.Speech.Tts;
+using Java.Util;
 using Xamarin.Forms;
 
 namespace VocalEyes.Droid.Common.Helper
@@ -15,7 +16,9 @@ namespace VocalEyes.Droid.Common.Helper
             _toSpeak = text;
             if (_speaker == null)
             {
+
                 _speaker = new TextToSpeech(ctx, this);
+                _speaker.SetLanguage(App.User.Language == "en" ? Locale.English : new Locale("nl"));
             }
             else
             {

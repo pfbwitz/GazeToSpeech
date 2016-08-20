@@ -1,23 +1,25 @@
 ﻿using VocalEyes.Common;
 using VocalEyes.Common.Controls;
-using VocalEyes.Common.Enumeration;
 using VocalEyes.Common.Interface;
 using Xamarin.Forms;
 
 namespace VocalEyes.Pages
 {
-    public class CapturePage : CustomPage
+    public class CapturePage : BaseContentPage
     {
         public override void LoadMe()
         {
             Title = TextResources.TtlCapture;
-            var button = new CustomButton { Text = "Start Backfacing Camera Capture" };
-            button.Clicked += (s, a) => DependencyService.Get<IOpenCvEngine>().Open(CameraFacing.Back);
+            var button = new CustomButton { Text = TextResources.BtnStartCapture };
+            button.Clicked += (s, a) => DependencyService.Get<IOpenCvEngine>().Open(App.User.CameraFacing);
 
-            var button2 = new CustomButton { Text = "Start Front Facing Camera" };
-            button2.Clicked += (s, a) => DependencyService.Get<IOpenCvEngine>().Open(CameraFacing.Front);
-
-            Content = new StackLayout { Children = { button, button2 } };
+            Content = new StackLayout { 
+                Children =
+                {
+                    new CustomLabel {Text=TextResources.LblCaptureInfo},
+                    button
+                } 
+            };
         }
     }
 }

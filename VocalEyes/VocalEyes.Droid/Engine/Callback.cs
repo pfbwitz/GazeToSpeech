@@ -47,8 +47,8 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    if (_activity.IsFinishing)
-                                        break;
+                                    //if (_activity.IsFinishing)
+                                    //    break;
                                     os.Write(byteRead);
                                 }
                             }
@@ -64,8 +64,8 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    if (_activity.IsFinishing)
-                                        break;
+                                    //if (_activity.IsFinishing)
+                                    //    break;
                                     os.Write(byteRead);
                                 }
                             }

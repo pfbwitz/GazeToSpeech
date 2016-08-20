@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.App;
@@ -96,6 +95,11 @@ namespace VocalEyes.Droid.Activities
 
             #region private
 
+        private EyeArea _leftEyeArea;
+        private EyeArea _rightEyeArea;
+
+        private ProgressDialog _progress;
+
         private readonly DetectionHelper _detectionHelper;
 
         private DateTime _calibrationStart;
@@ -128,8 +132,6 @@ namespace VocalEyes.Droid.Activities
 
         #region overrides
 
-        private ProgressDialog _progress;
-
         protected override void OnCreate(Bundle savedInstanceState)
         {
             RequestWindowFeature(WindowFeatures.NoTitle);
@@ -159,53 +161,6 @@ namespace VocalEyes.Droid.Activities
 
             Task.Run((Func<Task>) Start);
         }
-
-        private async Task Start()
-        {
-            try
-            {
-                while (!Running)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                    RunOnUiThread(() => TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss"));
-                }
-
-                RunOnUiThread(() =>
-                {
-                    TextViewTimer.Text = string.Empty;
-                    _progress.Dismiss();
-                    Stopwatch.Stop();
-                    FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
-                });
-
-                await Task.Run(() =>
-                {
-                    RunOnUiThread(() =>
-                    {
-                        try
-                        {
-                            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
-                            var builder = new AlertDialog.Builder(this);
-                            builder.SetMessage(SpeechHelper.CalibrationInit);
-                            builder.SetPositiveButton("OK", (a, s) =>
-                            {
-                                TextToSpeechHelper.CancelSpeak();
-                                _calibrationStart = DateTime.Now;
-                                _readyToCapture = true;
-                            });
-                            if (!IsFinishing)
-                                builder.Show();
-                        }
-                        catch (WindowManagerBadTokenException) { }
-                    });
-                });
-            }
-            catch (WindowManagerBadTokenException)
-            {
-            }
-        }
-
-      
 
         protected override void OnPause()
         {
@@ -244,9 +199,6 @@ namespace VocalEyes.Droid.Activities
             MGray.Release();
             MRgba.Release();
         }
-
-        private EyeArea _leftEyeArea;
-        private EyeArea _rightEyeArea;
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
@@ -310,16 +262,16 @@ namespace VocalEyes.Droid.Activities
 
                 _detectionHelper.DetectRightEye( MJavaDetectorEye, eyeareaRight, face, 24);
                 _detectionHelper.DetectLeftEye( MJavaDetectorEye, eyeareaLeft, face, 24);
-                var positionToDraw = PosLeft;
+                var position = PosLeft;
 
-                if (positionToDraw == null)
+                if (position == null)
                     return MRgba;
 
                 if(_detectionHelper.CenterPoint != null)
-                    PopulateGrid(_detectionHelper.GetDirection(positionToDraw));
+                    PopulateGrid(_detectionHelper.GetDirection(position));
 
                 if (ShouldAct())
-                    RunOnUiThread(() => HandleEyePosition(positionToDraw));
+                    RunOnUiThread(() => HandleEyePosition(position));
             }
             return MRgba;
         }
@@ -327,11 +279,56 @@ namespace VocalEyes.Droid.Activities
 
         #region custom methods
 
+        private async Task Start()
+        {
+            try
+            {
+                while (!Running)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    RunOnUiThread(() => TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss"));
+                }
+
+                RunOnUiThread(() =>
+                {
+                    TextViewTimer.Text = string.Empty;
+                    _progress.Dismiss();
+                    Stopwatch.Stop();
+                    FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
+                });
+
+                await Task.Run(() =>
+                {
+                    RunOnUiThread(() =>
+                    {
+                        try
+                        {
+                            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+                            var builder = new AlertDialog.Builder(this);
+                            builder.SetMessage(SpeechHelper.CalibrationInit);
+                            builder.SetPositiveButton("OK", (a, s) =>
+                            {
+                                TextToSpeechHelper.CancelSpeak();
+                                _calibrationStart = DateTime.Now;
+                                _readyToCapture = true;
+                            });
+                            if (!IsFinishing)
+                                builder.Show();
+                        }
+                        catch (WindowManagerBadTokenException) { }
+                    });
+                });
+            }
+            catch (WindowManagerBadTokenException)
+            {
+            }
+        }
+
         /// <summary>
         /// Draw the full character-grid on screen
         /// </summary>
         private void PopulateGrid(Direction direction)
-        {
+        {    
             if (_captureMethod == CaptureMethod.Subset)
             {
                 var rect = new Rect(0, 0, MRgba.Width() / 3, MRgba.Height() / 2);

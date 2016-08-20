@@ -62,6 +62,24 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to More information.
+        /// </summary>
+        internal static string BtnMoreInformation {
+            get {
+                return ResourceManager.GetString("BtnMoreInformation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start Capture.
+        /// </summary>
+        internal static string BtnStartCapture {
+            get {
+                return ResourceManager.GetString("BtnStartCapture", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Back.
         /// </summary>
         internal static string LblBack {
@@ -89,6 +107,33 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Initializing the detection libraries can take a long time. Please be patient while it loads..
+        /// </summary>
+        internal static string LblCaptureInfo {
+            get {
+                return ResourceManager.GetString("LblCaptureInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nederlands.
+        /// </summary>
+        internal static string LblDutch {
+            get {
+                return ResourceManager.GetString("LblDutch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to English.
+        /// </summary>
+        internal static string LblEnglish {
+            get {
+                return ResourceManager.GetString("LblEnglish", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Camera facing.
         /// </summary>
         internal static string LblFacing {
@@ -107,7 +152,16 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Language.
+        ///   Looks up a localized string similar to The Vocal Eyes app for mobile is developed by Peter Brachwitz. It is based on the &apos;Vocal Eyes, Becker Communication System&apos;, engineered by Gary Becker, the father of legendary guitarplayer and ALS-patient Jason Becker. For more information, click the button below.
+        /// </summary>
+        internal static string LblHomeInfo {
+            get {
+                return ResourceManager.GetString("LblHomeInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voice language.
         /// </summary>
         internal static string LblLanguage {
             get {

@@ -9,17 +9,17 @@ using Xamarin.Forms;
 
 namespace VocalEyes.Pages
 {
-    public class SettingsPage : CustomPage
+    public class SettingsPage : BaseContentPage
     {
         public override void LoadMe()
         {
             Title = TextResources.TtlSettings;
 
-            //var languages = DependencyService.Get<IDeviceHelper>().GetAvailableLanguages();
             var languages = new List<Language>
             {
-                new Language{Code="nl", Name = "Nederlands"},
-                new Language{Code="en", Name = "English"}
+                new Language{Code="en", Name = TextResources.LblEnglish},
+                new Language{Code="nl", Name = TextResources.LblDutch},
+               
             };
             var languageImage = new Image
             {
@@ -37,7 +37,7 @@ namespace VocalEyes.Pages
                 App.User.Language = code;
                 QueryHelper<User>.InsertOrReplace(App.User);
             };
-            //languagePicker.SelectedIndex = languages.IndexOf(languages.Single(l => l.Code == App.User.Language));
+            languagePicker.SelectedIndex = languages.IndexOf(languages.Single(l => l.Code == App.User.Language));
 
             var languageStack = new StackLayout
             {
@@ -54,18 +54,14 @@ namespace VocalEyes.Pages
                 VerticalOptions = LayoutOptions.Center
             };
             var facingPicker = new Picker {HorizontalOptions = LayoutOptions.FillAndExpand};
-            facingPicker.Items.Add(TextResources.LblFront);
             facingPicker.Items.Add(TextResources.LblBack);
+            facingPicker.Items.Add(TextResources.LblFront);
             facingPicker.SelectedIndexChanged += (sender, args) =>
             {
-                var index = ((Picker) sender).SelectedIndex;
-                if (index == 1)
-                    App.User.CameraFacing = CameraFacing.Front.ToString();
-                if (index == 0)
-                    App.User.CameraFacing = CameraFacing.Back.ToString();
+                App.User.CameraFacing = ((Picker)sender).SelectedIndex;      
                 QueryHelper<User>.InsertOrReplace(App.User);
             };
-            //facingPicker.SelectedIndex = App.User.CameraFacing == CameraFacing.Front.ToString() ? 0 : 1;
+            facingPicker.SelectedIndex = App.User.CameraFacing;
 
             var facingStack = new StackLayout
             {
@@ -73,13 +69,15 @@ namespace VocalEyes.Pages
                 Children = { facingImage, facingPicker }
             };
 
-            Content = new StackLayout { Children =
-            {
-                new CustomLabel{Text=TextResources.LblLanguage},
-                languageStack, 
-                new CustomLabel{Text=TextResources.LblFacing},
-                facingStack
-            } };
+            Content = new StackLayout { 
+                Children =
+                {
+                    new CustomLabel{Text=TextResources.LblLanguage},
+                    languageStack, 
+                    new CustomLabel{Text=TextResources.LblFacing},
+                    facingStack
+                } 
+            };
         }
     }
 }

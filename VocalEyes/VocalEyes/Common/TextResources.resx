@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BtnMoreInformation" xml:space="preserve">
+    <value>More information</value>
+  </data>
+  <data name="BtnStartCapture" xml:space="preserve">
+    <value>Start Capture</value>
+  </data>
   <data name="LblBack" xml:space="preserve">
     <value>Back</value>
   </data>
@@ -126,14 +132,26 @@
   <data name="LblCalibrationInit" xml:space="preserve">
     <value>System will calibrate your eyes. Look straight ahead for 5 seconds.</value>
   </data>
+  <data name="LblCaptureInfo" xml:space="preserve">
+    <value>Initializing the detection libraries can take a long time. Please be patient while it loads.</value>
+  </data>
+  <data name="LblDutch" xml:space="preserve">
+    <value>Nederlands</value>
+  </data>
+  <data name="LblEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
   <data name="LblFacing" xml:space="preserve">
     <value>Camera facing</value>
   </data>
   <data name="LblFront" xml:space="preserve">
     <value>Front</value>
   </data>
+  <data name="LblHomeInfo" xml:space="preserve">
+    <value>The Vocal Eyes app for mobile is developed by Peter Brachwitz. It is based on the 'Vocal Eyes, Becker Communication System', engineered by Gary Becker, the father of legendary guitarplayer and ALS-patient Jason Becker. For more information, click the button below</value>
+  </data>
   <data name="LblLanguage" xml:space="preserve">
-    <value>Language</value>
+    <value>Voice language</value>
   </data>
   <data name="LblLoadingSlow" xml:space="preserve">
     <value>Initializing facial detection library. This might take a while</value>

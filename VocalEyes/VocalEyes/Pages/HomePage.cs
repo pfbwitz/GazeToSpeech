@@ -1,25 +1,27 @@
-﻿using VocalEyes.Common;
+﻿using System;
+using VocalEyes.Common;
+using VocalEyes.Common.Controls;
 using Xamarin.Forms;
 
 namespace VocalEyes.Pages
 {
-    public class HomePage : CustomPage
+    public class HomePage : BaseContentPage
     {
         public override void LoadMe()
         {
             Title = TextResources.TtlHome;
             Padding = new Thickness(0);
-            var webview = new WebView
+
+            var button = new CustomButton(TextResources.BtnMoreInformation);
+            button.Clicked += (sender, args) => Device.OpenUri(new Uri("http://jasonbeckerguitar.com/eye_communication.html"));
+            Content = new StackLayout
             {
-                HorizontalOptions = LayoutOptions.FillAndExpand,
-                VerticalOptions = LayoutOptions.FillAndExpand,
-                Source = "http://jasonbeckerguitar.com/eye_communication.html"
+                Children =
+                {
+                    new CustomLabel{Text = TextResources.LblHomeInfo},
+                    button
+                }
             };
-            webview.Navigating += (sender, args) =>
-            {
-                args.Cancel = true;
-            };
-            Content = webview;
         }
     }
 }

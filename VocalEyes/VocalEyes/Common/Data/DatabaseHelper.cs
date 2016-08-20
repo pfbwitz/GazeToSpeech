@@ -19,7 +19,7 @@ namespace VocalEyes.Common.Data
 			UpdateTables();
 
 		    var user = new User();
-		    user.CameraFacing = CameraFacing.Back.ToString();
+		    user.CameraFacing = CameraFacing.Back;
 		    user.Language = "en";
 
             Connection.Insert(user);
