@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xamarin.Forms;
+﻿using Xamarin.Forms;
 
 namespace VocalEyes.Common
 {
@@ -15,5 +10,7 @@ namespace VocalEyes.Common
         public static readonly string BlueString = "006ac2";
         public static readonly Color BlueColor = Color.FromHex(BlueString);
 
+        public static int AreaSkip = 4;
+        public static int PupilSkip = 2;
     }
 }

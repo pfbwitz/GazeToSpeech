@@ -18,8 +18,6 @@ namespace VocalEyes.Droid.Common.Model
             }
         }
 
-        public double DistanceToPoint { get; set; }
-
         public string GetCharacter(Direction direction)
         {
             switch (direction)

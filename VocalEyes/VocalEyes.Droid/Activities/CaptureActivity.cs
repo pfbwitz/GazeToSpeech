@@ -14,6 +14,7 @@ using OpenCV.Android;
 using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
+using VocalEyes.Common;
 using VocalEyes.Common.Enumeration;
 using VocalEyes.Common.Utils;
 using VocalEyes.Droid.Common.Helper;
@@ -39,12 +40,11 @@ namespace VocalEyes.Droid.Activities
     {
         public CaptureActivity()
         {
-            Instance = this;
             Calibrating = true;
             CreateGridSubSet();
             _captureMethod = CaptureMethod.Subset;
-            _detectionHelper = new DetectionHelper();
-            TextToSpeechHelper = new TextToSpeechHelper(this);
+            _detectionHelper = new DetectionHelper(this);
+            TextToSpeechHelper = new TextToSpeechHelper();
             var mDetectorName = new string[2];
             mDetectorName[JavaDetector] = "Java";
             mDetectorName[NativeDetector] = "Native (tracking)";
@@ -69,8 +69,6 @@ namespace VocalEyes.Droid.Activities
         public Rect AvgRightEye;
         public List<Rect> RightRectCaptures = new List<Rect>();
         public List<Rect> LeftRectCaptures = new List<Rect>();
-
-        public readonly CaptureActivity Instance;
 
         public TextToSpeechHelper TextToSpeechHelper;
 
@@ -99,6 +97,8 @@ namespace VocalEyes.Droid.Activities
             #region private
 
         private readonly DetectionHelper _detectionHelper;
+
+        private DateTime _calibrationStart;
 
         private bool _readyToCapture;
 
@@ -150,57 +150,62 @@ namespace VocalEyes.Droid.Activities
             _mOpenCvCameraView.SetCvCameraViewListener2(this);
 
             _mLoaderCallback = new Callback(this, _mOpenCvCameraView);
-
             _progress = new ProgressDialog(this) {Indeterminate = true};
             _progress.SetCancelable(true);
             _progress.SetProgressStyle(ProgressDialogStyle.Spinner);
             _progress.SetMessage(SpeechHelper.InitMessage);
             _progress.Show();
             _progress.CancelEvent += (sender, args) => Finish();
-            Task.Run(async() =>
-            {
-                try
-                {
-                    while (!Running)
-                    {
-                        await Task.Delay(1000);
-                        RunOnUiThread(() => TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss"));
-                    }
 
-                    RunOnUiThread(() =>
-                    {
-                        TextViewTimer.Text = string.Empty;
-                        _progress.Dismiss();
-                        Stopwatch.Stop();
-                        FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
-                    });
-
-                    await Task.Run(() =>
-                    {
-                        RunOnUiThread(() =>
-                        {
-                            try
-                            {
-                                var builder = new AlertDialog.Builder(this);
-                                builder.SetMessage(SpeechHelper.CalibrationInit);
-                                builder.SetPositiveButton("OK", (a, s) =>
-                                {
-                                    _calibrationStart = DateTime.Now;
-                                    _readyToCapture = true;
-                                });
-                                builder.Show();
-                            }
-                            catch(WindowManagerBadTokenException){}
-                        });
-                    });
-                }
-                catch (WindowManagerBadTokenException)
-                {
-                }
-            });
+            Task.Run((Func<Task>) Start);
         }
 
-        private DateTime _calibrationStart;
+        private async Task Start()
+        {
+            try
+            {
+                while (!Running)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    RunOnUiThread(() => TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss"));
+                }
+
+                RunOnUiThread(() =>
+                {
+                    TextViewTimer.Text = string.Empty;
+                    _progress.Dismiss();
+                    Stopwatch.Stop();
+                    FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
+                });
+
+                await Task.Run(() =>
+                {
+                    RunOnUiThread(() =>
+                    {
+                        try
+                        {
+                            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+                            var builder = new AlertDialog.Builder(this);
+                            builder.SetMessage(SpeechHelper.CalibrationInit);
+                            builder.SetPositiveButton("OK", (a, s) =>
+                            {
+                                TextToSpeechHelper.CancelSpeak();
+                                _calibrationStart = DateTime.Now;
+                                _readyToCapture = true;
+                            });
+                            if (!IsFinishing)
+                                builder.Show();
+                        }
+                        catch (WindowManagerBadTokenException) { }
+                    });
+                });
+            }
+            catch (WindowManagerBadTokenException)
+            {
+            }
+        }
+
+      
 
         protected override void OnPause()
         {
@@ -262,10 +267,10 @@ namespace VocalEyes.Droid.Activities
                 return MRgba;
 
             if(_leftEyeArea == null)
-                _leftEyeArea = new EyeArea(2);
+                _leftEyeArea = new EyeArea(Constants.AreaSkip);
 
             if(_rightEyeArea == null)
-                _rightEyeArea = new EyeArea(2);
+                _rightEyeArea = new EyeArea(Constants.AreaSkip);
 
             if (Calibrating)
             {
@@ -303,15 +308,15 @@ namespace VocalEyes.Droid.Activities
                 Imgproc.Rectangle(MRgba, eyeareaLeft.Tl(), eyeareaLeft.Br(), new Scalar(255, 0, 0, 255), 2);
                 Imgproc.Rectangle(MRgba, eyeareaRight.Tl(), eyeareaRight.Br(), new Scalar(255, 0, 0, 255), 2);
 
-                _detectionHelper.DetectRightEye(this, MJavaDetectorEye, eyeareaRight, face, 24);
-                _detectionHelper.DetectLeftEye(this, MJavaDetectorEye, eyeareaLeft, face, 24);
+                _detectionHelper.DetectRightEye( MJavaDetectorEye, eyeareaRight, face, 24);
+                _detectionHelper.DetectLeftEye( MJavaDetectorEye, eyeareaLeft, face, 24);
                 var positionToDraw = PosLeft;
 
                 if (positionToDraw == null)
                     return MRgba;
 
                 if(_detectionHelper.CenterPoint != null)
-                    PopulateGrid(GetDirection(positionToDraw));
+                    PopulateGrid(_detectionHelper.GetDirection(positionToDraw));
 
                 if (ShouldAct())
                     RunOnUiThread(() => HandleEyePosition(positionToDraw));
@@ -353,28 +358,19 @@ namespace VocalEyes.Droid.Activities
                         rect.Y = MRgba.Height() / 2;
                         break;
                 }
-                Imgproc.Rectangle(MRgba, rect.Tl(), rect.Br(), new Scalar(255, 0, 0), 2);
+
+                Imgproc.Rectangle(MRgba, rect.Tl(), rect.Br(), new Scalar(255, 0, 0), 3);
+
+               // var overlay = new Mat();
+               // MRgba.CopyTo(overlay);
+
+               //Imgproc.Rectangle(overlay, rect.Tl(), rect.Br(), new Scalar(255, 0, 0, 0.1), -1);
+
+               //Core.AddWeighted(overlay, 0.4, MRgba, 1 - 0.4, 0, MRgba);
             }
         }
 
-        /// <summary>
-        /// Determine the absolute distance between 2 points
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        private double GetDistance(Point a, Point b)
-        {
-            var distanceX = a.X - b.X;
-            if (distanceX < 0)
-                distanceX = distanceX*-1;
-
-            var distanceY = a.Y - b.Y;
-            if (distanceY < 0)
-                distanceY = distanceY*-1;
-
-            return Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
-        }
+       
 
         /// <summary>
         /// Create the grid of character-areas, so that the position of the pupil can be mapped to 
@@ -394,88 +390,7 @@ namespace VocalEyes.Droid.Activities
             };
         }
 
-        /// <summary>
-        /// Compare the pupil position and the center position 
-        /// and determine the direction of the pupil
-        /// </summary>
-        /// <param name="point">pupil position</param>
-        /// <returns>Direction of pupil</returns>
-        private Direction GetDirection(Point point)
-        {
-            var marginX = 10;
-            var marginY = 10;
-            _handling = true;
-
-            var direction = Direction.Center;
-
-            var centerpoint = _detectionHelper.CenterPoint;
-            var diffX = point.X - centerpoint.X;
-            var diffY = point.Y - centerpoint.Y;
-
-            var distance = GetDistance(point, _detectionHelper.CenterPoint);
-
-            var diffXInPixels = diffX < 0 ? diffX * -1 : diffX;
-            var diffYInPixels = diffY < 0 ? diffY * -1 : diffY;
-
-            //top-center or bottom-center
-            if (diffXInPixels <= marginX)
-            {
-                if (diffY < 0 && diffYInPixels > marginY)
-                    direction = Direction.Top;
-                if (diffY > 0 && diffYInPixels > marginY)
-                    direction = Direction.Bottom;
-            }
-
-            if (Facing == CameraFacing.Front)
-            {
-                //right, bottom-right or top-right
-                if (diffX < 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomRight;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopRight;
-                    else
-                        direction = Direction.Right;
-                }
-
-                //left, bottom-left or top-left
-                if (diffX > 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomLeft;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopLeft;
-                    else
-                        direction = Direction.Left;
-                }
-            }
-            else
-            {
-                //right, bottom-right or top-right
-                if (diffX > 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomRight;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopRight;
-                    else
-                        direction = Direction.Right;
-                }
-
-                //left, bottom-left or top-left
-                if (diffX < 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomLeft;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopLeft;
-                    else
-                        direction = Direction.Left;
-                }
-            }
-            return direction;
-        }
+       
 
         /// <summary>
         /// Handle calculated position of the pupil compared to the surface of the entire eye
@@ -485,17 +400,21 @@ namespace VocalEyes.Droid.Activities
         {
             try
             {
-                if (TextToSpeechHelper.IsSpeaking)
+                TextToSpeechHelper.CancelSpeak();
+
+                if (position == null || _handling)
                     return;
 
-                if (position == null || _handling || TextToSpeechHelper.IsSpeaking)
-                    return;
+                _handling = true;
 
-                var direction = GetDirection(position);
+                var direction = _detectionHelper.GetDirection(position);
 
                 TextToSpeechHelper.Speak(direction.ToString());
 
-                if (_captureMethod == CaptureMethod.Subset)
+                var emptyDirection = direction == Direction.Left || direction == Direction.Right ||
+                                     direction == Direction.Center;
+
+                if (_captureMethod == CaptureMethod.Subset && !emptyDirection)
                 {
                     _currentSubset = SubSets.SingleOrDefault(s => s.Direction == direction);
                     if (_currentSubset == null)
@@ -517,11 +436,25 @@ namespace VocalEyes.Droid.Activities
             }
             catch (Exception ex)
             {
+                HandleException(ex);
             }
             finally
             {
                 _handling = false;
             }
+        }
+
+        public void HandleException(Exception ex)
+        {
+            Alert(ex.Message);
+        }
+
+        private void Alert(string message)
+        {
+            var builder = new AlertDialog.Builder(this);
+            builder.SetTitle("Alert");
+            builder.SetMessage(message);
+            builder.SetPositiveButton("OK", (s, a) => {});
         }
 
         /// <summary>

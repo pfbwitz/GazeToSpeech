@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Android.Content;
+using Android.Views;
 using Java.IO;
 using Java.Lang;
 using OpenCV.Android;
@@ -12,8 +13,6 @@ namespace VocalEyes.Droid.Engine
 {
     internal class Callback : BaseLoaderCallback
     {
-        public static bool Cancelled;
-
         private readonly CaptureActivity _activity;
         private readonly CameraBridgeViewBase _mOpenCvCameraView;
 
@@ -32,6 +31,9 @@ namespace VocalEyes.Droid.Engine
               
                 Task.Run(() =>
                 {
+                    if (_activity.IsFinishing)
+                        return;
+
                     try
                     {
                         var cascadeDir = _activity.GetDir("cascade", FileCreationMode.Private);
@@ -45,12 +47,15 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    if (Cancelled)
+                                    if (_activity.IsFinishing)
                                         break;
                                     os.Write(byteRead);
                                 }
                             }
                         }
+
+                        if (_activity.IsFinishing)
+                            return;
 
                         using (var istr = _activity.Resources.OpenRawResource(Resource.Raw.haarcascade_lefteye_2splits))
                         {
@@ -59,12 +64,15 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    if (Cancelled)
+                                    if (_activity.IsFinishing)
                                         break;
                                     os.Write(byteRead);
                                 }
                             }
                         }
+
+                        if (_activity.IsFinishing)
+                            return;
 
                         _activity.MJavaDetector = new CascadeClassifier(_activity.MCascadeFile.AbsolutePath);
 
@@ -74,7 +82,7 @@ namespace VocalEyes.Droid.Engine
                             _activity.MJavaDetector = null;
                         }
                         else
-                            //Loaded cascade classifier from " + _activity.MCascadeFile.AbsolutePath
+                        //Loaded cascade classifier from " + _activity.MCascadeFile.AbsolutePath
 
                             _activity.MNativeDetector = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
 
@@ -87,16 +95,20 @@ namespace VocalEyes.Droid.Engine
                             _activity.MJavaDetectorEye = null;
                         }
                         else
-                            //Loaded cascade classifier from " + _activity.MCascadeFileEye.AbsolutePath
+                        //Loaded cascade classifier from " + _activity.MCascadeFileEye.AbsolutePath
 
-                            _activity.MNativeDetectorEye = new DetectionBasedTracker(_activity.MCascadeFile.AbsolutePath, 0);
+                            _activity.MNativeDetectorEye = new DetectionBasedTracker(
+                                _activity.MCascadeFile.AbsolutePath, 0);
 
                         cascadeDir.Delete();
 
                     }
-                    catch (IOException e)
+                    catch (WindowManagerBadTokenException)
                     {
-                        e.PrintStackTrace();
+                    }
+                    catch (IOException ex)
+                    {
+                        _activity.HandleException(ex);
                     }
                     _activity.RunOnUiThread(() =>
                     {

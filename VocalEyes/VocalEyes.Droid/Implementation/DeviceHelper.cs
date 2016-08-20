@@ -29,7 +29,7 @@ namespace VocalEyes.Droid.Implementation
 
         public List<Language> GetAvailableLanguages()
         {
-            return new TextToSpeechHelper(Forms.Context).GetAvailableLanguages();
+            return new List<Language>();//new TextToSpeechHelper(Forms.Context).GetAvailableLanguages();
         }
     }
 }
