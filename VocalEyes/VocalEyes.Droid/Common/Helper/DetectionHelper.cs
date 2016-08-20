@@ -6,16 +6,20 @@ using OpenCV.Core;
 using OpenCV.ImgProc;
 using OpenCV.ObjDetect;
 using VocalEyes.Droid.Activities;
+using VocalEyes.Droid.Common.Model;
 
 namespace VocalEyes.Droid.Common.Helper
 {
     public static class DetectionHelper
     {
         public const int JavaDetector = 0;
-        private static readonly List<Point> LeftPupils = new List<Point>();
-        private static readonly List<Point> RightPupils = new List<Point>();
+        //private static readonly List<Point> LeftPupils = new List<Point>();
+        //private static readonly List<Point> RightPupils = new List<Point>();
         public static Point CenterPoint { get; private set; }
         private static readonly List<Point> Centerpoints = new List<Point>();
+
+        private static Pupil _leftEye;
+        private static Pupil _righteye;
 
         public static Rect GetNearestFace(IEnumerable<Rect> faces)
         {
@@ -28,18 +32,44 @@ namespace VocalEyes.Droid.Common.Helper
             return face;
         }
 
-        public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, out bool pupilFound)
+        public static Mat DetectLeftEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
         {
-            return activity.DetectEye(clasificator, area, face, size, true, out pupilFound);
+            if (_leftEye == null)
+                _leftEye = new Pupil(2);
+            return activity.DetectEye(clasificator, area, face, size, true);
         }
 
-        public static Mat DetectRightEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, out bool pupilFound)
+        public static Mat DetectRightEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size)
         {
-            return activity.DetectEye(clasificator, area, face, size, false, out pupilFound);
+            if (_righteye == null)
+                _righteye = new Pupil(2);
+            return activity.DetectEye(clasificator, area, face, size, false);
+        }
+
+        private static void Calibrate(CaptureActivity activity, Point point)
+        {
+            if (activity.Calibrating)
+                Centerpoints.Add(point);
+            if (activity.Calibrating && Centerpoints.Count >= activity.FramesPerSecond * 5)
+            {
+                activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
+                activity.Calibrating = false;
+                CenterPoint = new Point(Centerpoints.Average(c => c.X), Centerpoints.Average(c => c.Y));
+            }
+        }
+
+        private static void DrawCenterPoint(CaptureActivity activity, Rect area, Rect eyeOnlyRectangle)
+        {
+            if (CenterPoint != null)
+            {
+
+                Imgproc.Circle(activity.MRgba.Submat(area), new Point(CenterPoint.X + (eyeOnlyRectangle.X - area.X),
+                    CenterPoint.Y + (eyeOnlyRectangle.Y - area.Y)), 10, new Scalar(255, 0, 0), 2);
+            }
         }
 
         public static Mat DetectEye(this CaptureActivity activity, CascadeClassifier clasificator, Rect area, Rect face, int size, 
-            bool isLefteye, out bool pupilFound)
+            bool isLefteye)
         {
             var template = new Mat();
             var mRoi = activity.MGray.Submat(area);
@@ -52,8 +82,6 @@ namespace VocalEyes.Droid.Common.Helper
                 new Size(30, 30), new Size());
 
             var eyesArray = eyes.ToArray();
-
-            pupilFound = eyesArray.Any();
 
             for (var i = 0; i < eyesArray.Length; )
             {
@@ -73,48 +101,39 @@ namespace VocalEyes.Droid.Common.Helper
                 Imgproc.Rectangle(activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(),
                     new Scalar(255, 255, 255), 2);
 
+                //if (isLefteye)
+                //    LeftPupils.Add(mmG.MinLoc);
+                //else
+                //    RightPupils.Add(mmG.MinLoc);
+
+                Point avg;
                 if (isLefteye)
-                    LeftPupils.Add(mmG.MinLoc);
+                    avg = _leftEye.Insert(mmG.MinLoc).GetShape();
                 else
-                    RightPupils.Add(mmG.MinLoc);
+                    avg = _righteye.Insert(mmG.MinLoc).GetShape();
 
-                Point avg = null;
+                //if (isLefteye && LeftPupils.Count >= activity.FramesPerSecond / 4)
+                //{
+                //    avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
+                //    LeftPupils.Clear();
+                //    LeftPupils.Add(avg);
+                //}
+                //else if(isLefteye)
+                //    avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
 
-                if (isLefteye && LeftPupils.Count >= activity.FramesPerSecond / 4)
-                {
-                    avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
-                    LeftPupils.Clear();
-                    LeftPupils.Add(avg);
-                }
-                else if(isLefteye)
-                    avg = new Point(LeftPupils.Average(p => p.X), LeftPupils.Average(p => p.Y));
-
-                if (!isLefteye && RightPupils.Count >= activity.FramesPerSecond/4)
-                {
-                    avg = new Point(RightPupils.Average(p => p.X), RightPupils.Average(p => p.Y));
-                        RightPupils.Clear();
-                        RightPupils.Add(avg);
-                }
-                else if (!isLefteye)
-                    avg = new Point(RightPupils.Average(p => p.X), RightPupils.Average(p => p.Y));
+                //if (!isLefteye && RightPupils.Count >= activity.FramesPerSecond/4)
+                //{
+                //    avg = new Point(RightPupils.Average(p => p.X), RightPupils.Average(p => p.Y));
+                //        RightPupils.Clear();
+                //        RightPupils.Add(avg);
+                //}
+                //else if (!isLefteye)
+                //    avg = new Point(RightPupils.Average(p => p.X), RightPupils.Average(p => p.Y));
 
                 if (isLefteye)
                 {
-                    if (activity.Calibrating)
-                        Centerpoints.Add(avg);
-                    if (activity.Calibrating && Centerpoints.Count >= activity.FramesPerSecond * 5)
-                    {
-                        activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
-                        activity.Calibrating = false;
-                        CenterPoint = new Point(Centerpoints.Average(c => c.X), Centerpoints.Average(c => c.Y));
-                    }
-
-                    if (CenterPoint != null)
-                    {
-                        var cp = new Point(CenterPoint.X + (eyeOnlyRectangle.X - area.X), 
-                            CenterPoint.Y + (eyeOnlyRectangle.Y - area.Y));
-                        Imgproc.Circle(activity.MRgba.Submat(area), cp, 10, new Scalar(255, 0, 0), 2);
-                    }
+                    Calibrate(activity, avg);
+                    DrawCenterPoint(activity, area, eyeOnlyRectangle);
                 }
                  
                 Imgproc.Circle(vyrez, avg, 10, new Scalar(255, 255, 255), 2);

@@ -113,6 +113,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\Model\EyeArea.cs" />
+    <Compile Include="Common\Model\Pupil.cs" />
     <Compile Include="Implementation\DeviceHelper.cs" />
     <Compile Include="Implementation\SqliteHelper.cs" />
     <Compile Include="Implementation\NativeOpenCvEngine.cs" />
