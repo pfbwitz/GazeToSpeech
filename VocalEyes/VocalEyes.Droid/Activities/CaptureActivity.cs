@@ -30,7 +30,7 @@ namespace VocalEyes.Droid.Activities
     ///                 or other disabled individuals, based on the Becker Vocal 
     ///                 Eyes communication by Gary Becker (father of Jason Becker)
     /// Author:         Peter Brachwitz
-    /// Last Update:    August 18 2016
+    /// Last Update:    August 20 2016
     /// </summary>
     [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
@@ -89,6 +89,10 @@ namespace VocalEyes.Droid.Activities
         public DetectionBasedTracker MNativeDetectorEye { get; set; }
 
         public TextView TextViewTimer;
+        public TextView Clock;
+        public TextView Load1;
+        public TextView Load2;
+        public TextView Load3;
         public Stopwatch Stopwatch = new Stopwatch();
 
             #endregion
@@ -141,11 +145,22 @@ namespace VocalEyes.Droid.Activities
 
             SetContentView(Resource.Layout.face_detect_surface_view);
 
+            FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Gone;
+
             _mOpenCvCameraView = FindViewById<CameraBridgeViewBase>(Resource.Id.fd_activity_surface_view);
             _mOpenCvCameraView.Visibility = ViewStates.Visible;
 
             Stopwatch.Start();
             TextViewTimer = FindViewById<TextView>(Resource.Id.tv1);
+            Clock = FindViewById<TextView>(Resource.Id.tv2);
+
+            Load1 = FindViewById<TextView>(Resource.Id.p1);
+            Load2 = FindViewById<TextView>(Resource.Id.p2);
+            Load3 = FindViewById<TextView>(Resource.Id.p3);
+
+            Load1.Text = "Initializing face detection library STATUS: LOADING";
+            Load2.Text = "Initializing eye detection library STATUS: LOADING";
+            Load3.Text = "Initializing facial landmark library STATUS: SKIPPING";
 
             Facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
             _mOpenCvCameraView.SetCameraIndex(Facing);
@@ -156,8 +171,13 @@ namespace VocalEyes.Droid.Activities
             _progress.SetCancelable(true);
             _progress.SetProgressStyle(ProgressDialogStyle.Spinner);
             _progress.SetMessage(SpeechHelper.InitMessage);
+            _progress.Window.ClearFlags(WindowManagerFlags.DimBehind);
             _progress.Show();
-            _progress.CancelEvent += (sender, args) => Finish();
+            _progress.CancelEvent += (sender, args) =>
+            {
+                _mLoaderCallback.Cancelling = true;
+                Finish();
+            };
 
             Task.Run((Func<Task>) Start);
         }
@@ -202,6 +222,7 @@ namespace VocalEyes.Droid.Activities
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
+            RunOnUiThread(() => Clock.Text = DateTime.Now.ToString("t") + " ");
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
 
@@ -286,15 +307,26 @@ namespace VocalEyes.Droid.Activities
                 while (!Running)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1));
-                    RunOnUiThread(() => TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss"));
+                    RunOnUiThread(() =>
+                    {
+                        try
+                        {
+                            Clock.Text = DateTime.Now.ToString("t") + " ";
+                            TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss");
+                        }
+                        catch(WindowManagerBadTokenException){}
+                    });
                 }
 
                 RunOnUiThread(() =>
                 {
-                    TextViewTimer.Text = string.Empty;
-                    _progress.Dismiss();
-                    Stopwatch.Stop();
-                    FindViewById<LinearLayout>(Resource.Id.l1).Visibility = ViewStates.Gone;
+                    try
+                    {
+                        TextViewTimer.Text = string.Empty;
+                        _progress.Dismiss();
+                        Stopwatch.Stop();
+                    }
+                    catch(WindowManagerBadTokenException){}
                 });
 
                 await Task.Run(() =>
@@ -308,6 +340,8 @@ namespace VocalEyes.Droid.Activities
                             builder.SetMessage(SpeechHelper.CalibrationInit);
                             builder.SetPositiveButton("OK", (a, s) =>
                             {
+                                FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
+                                Load1.Text=  Load2.Text = Load3.Text = string.Empty;
                                 TextToSpeechHelper.CancelSpeak();
                                 _calibrationStart = DateTime.Now;
                                 _readyToCapture = true;
@@ -354,20 +388,15 @@ namespace VocalEyes.Droid.Activities
                         rect.X = MRgba.Width()/3;
                         rect.Y = MRgba.Height() / 2;
                         break;
+                    case Direction.Center:
+                        rect = null;
+                        break;
                 }
 
-                Imgproc.Rectangle(MRgba, rect.Tl(), rect.Br(), new Scalar(255, 0, 0), 3);
-
-               // var overlay = new Mat();
-               // MRgba.CopyTo(overlay);
-
-               //Imgproc.Rectangle(overlay, rect.Tl(), rect.Br(), new Scalar(255, 0, 0, 0.1), -1);
-
-               //Core.AddWeighted(overlay, 0.4, MRgba, 1 - 0.4, 0, MRgba);
+                if(rect != null)
+                    Imgproc.Rectangle(MRgba, rect.Tl(), rect.Br(), new Scalar(255, 0, 0), 3);
             }
         }
-
-       
 
         /// <summary>
         /// Create the grid of character-areas, so that the position of the pupil can be mapped to 
@@ -386,8 +415,6 @@ namespace VocalEyes.Droid.Activities
                 new Subset{ Direction = Direction.BottomRight, Partition = SubsetPartition.Uvwxyz }
             };
         }
-
-       
 
         /// <summary>
         /// Handle calculated position of the pupil compared to the surface of the entire eye

@@ -10,7 +10,6 @@ namespace VocalEyes.Pages
         public override void LoadMe()
         {
             Title = TextResources.TtlHome;
-            Padding = new Thickness(0);
 
             var button = new CustomButton(TextResources.BtnMoreInformation);
             button.Clicked += (sender, args) => Device.OpenUri(new Uri("http://jasonbeckerguitar.com/eye_communication.html"));

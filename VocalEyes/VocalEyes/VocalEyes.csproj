@@ -59,6 +59,7 @@
     <Compile Include="Common\UI\MenuViewCell.cs" />
     <Compile Include="Common\Utils\SpeechHelper.cs" />
     <Compile Include="Model\BaseModel.cs" />
+    <Compile Include="Model\DirectionDistance.cs" />
     <Compile Include="Model\Gebruiker.cs" />
     <Compile Include="Common\Interface\IBaseModel.cs" />
     <Compile Include="Model\Language.cs" />

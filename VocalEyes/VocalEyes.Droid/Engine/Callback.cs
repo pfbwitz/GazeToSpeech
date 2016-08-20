@@ -16,6 +16,8 @@ namespace VocalEyes.Droid.Engine
         private readonly CaptureActivity _activity;
         private readonly CameraBridgeViewBase _mOpenCvCameraView;
 
+        public bool Cancelling;
+
         public Callback(CaptureActivity activity, CameraBridgeViewBase view)
             : base(activity)
         {
@@ -47,12 +49,16 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    //if (_activity.IsFinishing)
-                                    //    break;
-                                    os.Write(byteRead);
+                                    if (Cancelling)
+                                        break;
+                                     os.Write(byteRead);
                                 }
                             }
                         }
+
+                        _activity.RunOnUiThread(
+                            () => _activity.Load1.Text = "Initializing face detection library STATUS: DONE");
+
 
                         if (_activity.IsFinishing)
                             return;
@@ -64,8 +70,8 @@ namespace VocalEyes.Droid.Engine
                                 int byteRead;
                                 while ((byteRead = istr.ReadByte()) != -1)
                                 {
-                                    //if (_activity.IsFinishing)
-                                    //    break;
+                                    if (Cancelling)
+                                        break;
                                     os.Write(byteRead);
                                 }
                             }
@@ -75,6 +81,8 @@ namespace VocalEyes.Droid.Engine
                             return;
 
                         _activity.MJavaDetector = new CascadeClassifier(_activity.MCascadeFile.AbsolutePath);
+
+                       
 
                         if (_activity.MJavaDetector.Empty())
                         {
@@ -102,6 +110,8 @@ namespace VocalEyes.Droid.Engine
 
                         cascadeDir.Delete();
 
+                        _activity.RunOnUiThread(
+                           () => _activity.Load2.Text = "Initializing eye detection library STATUS: DONE");
                     }
                     catch (WindowManagerBadTokenException)
                     {
@@ -110,6 +120,10 @@ namespace VocalEyes.Droid.Engine
                     {
                         _activity.HandleException(ex);
                     }
+                    //catch (Exception ex)
+                    //{
+                    //    _activity.Finish();
+                    //}
                     _activity.RunOnUiThread(() =>
                     {
                         _mOpenCvCameraView.EnableView();

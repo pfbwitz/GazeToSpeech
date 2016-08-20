@@ -170,7 +170,7 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Initializing facial detection library. This might take a while.
+        ///   Looks up a localized string similar to Initializing libraries. This might take a while.
         /// </summary>
         internal static string LblLoadingSlow {
             get {

@@ -9,11 +9,14 @@ using OpenCV.ObjDetect;
 using VocalEyes.Common;
 using VocalEyes.Droid.Activities;
 using VocalEyes.Droid.Common.Model;
+using VocalEyes.Model;
 
 namespace VocalEyes.Droid.Common.Helper
 {
     public class DetectionHelper
     {
+        const int PupilRadius = 10;
+
         private readonly CaptureActivity _activity;
 
         public const int JavaDetector = 0;
@@ -68,14 +71,62 @@ namespace VocalEyes.Droid.Common.Helper
             }
         }
 
-        private void DrawCenterPoint(CaptureActivity activity, Rect area, Rect eyeOnlyRectangle)
+        private void DrawCenterPoint(Mat vyrez, CaptureActivity activity, Rect area, Rect eyeOnlyRectangle)
         {
             if (CenterPoint != null)
             {
-                Imgproc.Circle(activity.MRgba.Submat(area), new Point(CenterPoint.X + (eyeOnlyRectangle.X - area.X),
-                    CenterPoint.Y + (eyeOnlyRectangle.Y - area.Y)), 10, new Scalar(255, 0, 0), 2);
+                var centerX = CenterPoint.X;// + (eyeOnlyRectangle.X - area.X);
+                var centerY = CenterPoint.Y;// + (eyeOnlyRectangle.Y - area.Y);
+                //var mat = activity.MRgba.Submat(area);
+                var mat = vyrez;
+
+                Imgproc.Circle(mat, new Point(centerX, centerY),
+                    PupilRadius, new Scalar(255, 0, 0), 2);
+#if DEBUG
+                const int factor = 1;
+                //top-right
+                Imgproc.Circle(mat, new Point(centerX + PupilRadius * factor, centerY - PupilRadius * factor),
+                   PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //bottom-right
+                Imgproc.Circle(mat, new Point(centerX + PupilRadius * factor, centerY + PupilRadius * factor),
+                   PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //right
+                Imgproc.Circle(mat, new Point(centerX + PupilRadius * factor, centerY),
+                   PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //top-left
+                Imgproc.Circle(mat, new Point(centerX - PupilRadius * factor, centerY - PupilRadius * factor),
+                  PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //bottom-left
+                Imgproc.Circle(mat, new Point(centerX - PupilRadius * factor, centerY + PupilRadius * factor),
+                  PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //left
+                Imgproc.Circle(mat, new Point(centerX - PupilRadius * factor, centerY),
+                  PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //top
+                Imgproc.Circle(mat, new Point(centerX, centerY + PupilRadius * factor),
+                PupilRadius, new Scalar(255, 0, 0), 2);
+
+                //bottom
+                Imgproc.Circle(mat, new Point(centerX, centerY - PupilRadius * factor),
+                PupilRadius, new Scalar(255, 0, 0), 2);
+#endif
             }
         }
+
+        private Point _top;
+        private Point _left;
+        private Point _right;
+        private Point _bottom;
+        private Point _bottomLeft;
+        private Point _topLeft;
+        private Point _bottomRight;
+        private Point _topRight;
 
         public Mat DetectEye(CascadeClassifier clasificator, Rect area, Rect face, int size, 
             bool isLefteye)
@@ -105,6 +156,7 @@ namespace VocalEyes.Droid.Common.Helper
                 var vyrez = _activity.MRgba.Submat(eyeOnlyRectangle);
 
                 var mmG = Core.MinMaxLoc(mRoi);
+                var cp = new Point(mmG.MinLoc.X + PupilRadius/2, mmG.MinLoc.Y + PupilRadius/2);
 
                 Imgproc.Rectangle(_activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(),
                     new Scalar(255, 255, 255), 2);
@@ -112,22 +164,30 @@ namespace VocalEyes.Droid.Common.Helper
                 Point avg;
                 if (isLefteye)
                 {
-                    avg = _leftEye.Insert(mmG.MinLoc).GetShape();
+                    avg = _leftEye.Insert(cp).GetShape();
                     Calibrate(avg);
-                    DrawCenterPoint(_activity, area, eyeOnlyRectangle);
+                    DrawCenterPoint(vyrez, _activity, area, eyeOnlyRectangle);
                 }
                 else
-                    avg = _righteye.Insert(mmG.MinLoc).GetShape();
-                 
-                Imgproc.Circle(vyrez, avg, 10, new Scalar(255, 255, 255), 2);
+                    avg = _righteye.Insert(cp).GetShape();
+
+                if (CenterPoint != null)
+                {
+                    var factor = 1;
+                    _top = new Point(CenterPoint.X, CenterPoint.Y - PupilRadius * factor);
+                    _left = new Point(CenterPoint.X - PupilRadius * factor, CenterPoint.Y);
+                    _right = new Point(CenterPoint.X + PupilRadius * factor, CenterPoint.Y);
+                    _bottom = new Point(CenterPoint.X, CenterPoint.Y + PupilRadius * factor);
+
+                    _bottomLeft = new Point(CenterPoint.X - PupilRadius * factor, CenterPoint.Y + PupilRadius * factor);
+                    _topLeft = new Point(CenterPoint.X - PupilRadius * factor, CenterPoint.Y - PupilRadius * factor);
+                    _bottomRight = new Point(CenterPoint.X + PupilRadius * factor, CenterPoint.Y + PupilRadius * factor);
+                    _topRight = new Point(CenterPoint.X + PupilRadius * factor, CenterPoint.Y - PupilRadius * factor);
+                }
+
+                Imgproc.Circle(vyrez, avg, PupilRadius, new Scalar(255, 255, 255), 2);
                 Imgproc.Circle(vyrez, avg, 4, new Scalar(255, 255, 255), 2);
                 Imgproc.Circle(vyrez, avg, 3, new Scalar(255, 255, 255), 2);
-
-                if (_activity.Facing == CameraFacing.Back)
-                {
-                    avg.X = _activity.MRgba.Width() - avg.X;
-                    avg.Y = _activity.MRgba.Height() - avg.Y;
-                }
 
                 try
                 {
@@ -155,10 +215,11 @@ namespace VocalEyes.Droid.Common.Helper
         /// <summary>
         /// Determine the absolute distance between 2 points
         /// </summary>
+        /// <param name="direction"></param>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static double GetDistance(Point a, Point b)
+        public static DirectionDistance GetDistance(Direction direction, Point a, Point b)
         {
             var distanceX = a.X - b.X;
             if (distanceX < 0)
@@ -167,8 +228,11 @@ namespace VocalEyes.Droid.Common.Helper
             var distanceY = a.Y - b.Y;
             if (distanceY < 0)
                 distanceY = distanceY * -1;
-
-            return Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+            return new DirectionDistance
+            {
+                Direction = direction,
+                Distance = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2))
+            };
         }
 
         /// <summary>
@@ -179,77 +243,39 @@ namespace VocalEyes.Droid.Common.Helper
         /// <returns>Direction of pupil</returns>
         public Direction GetDirection(Point point)
         {
-            var marginX = 10;
-            var marginY = 10;
-
-            var direction = Direction.Center;
-
-            var centerpoint = CenterPoint;
-            var diffX = point.X - centerpoint.X;
-            var diffY = point.Y - centerpoint.Y;
-
-            var distance = GetDistance(point, CenterPoint);
-
-            var diffXInPixels = diffX < 0 ? diffX * -1 : diffX;
-            var diffYInPixels = diffY < 0 ? diffY * -1 : diffY;
-
-            //top-center or bottom-center
-            if (diffXInPixels <= marginX)
+            var distances = new List<DirectionDistance>
             {
-                if (diffY < 0 && diffYInPixels > marginY)
-                    direction = Direction.Top;
-                if (diffY > 0 && diffYInPixels > marginY)
-                    direction = Direction.Bottom;
-            }
+                GetDistance(Direction.Center, point, CenterPoint),
+                GetDistance(Direction.Top, point, _top),
+                GetDistance(Direction.Left, point, _left),
+                GetDistance(Direction.Right, point, _right),
+                GetDistance(Direction.Bottom, point, _bottom),
+                GetDistance(Direction.TopRight, point, _topRight),
+                GetDistance(Direction.TopLeft, point, _topLeft),
+                GetDistance(Direction.BottomRight, point, _bottomRight),
+                GetDistance(Direction.BottomLeft, point, _bottomLeft)
+            };
+            var smallestDistance = distances.Min(d => d.Distance);
+            var direction = distances.Single(d => d.Distance == smallestDistance).Direction;
 
+            //reverse horizontal direction if using the front camera
             if (_activity.Facing == CameraFacing.Front)
             {
-                //right, bottom-right or top-right
-                if (diffX < 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomRight;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopRight;
-                    else
-                        direction = Direction.Right;
-                }
+                if (direction == Direction.BottomLeft)
+                    direction = Direction.BottomRight;
+                else if (direction == Direction.TopLeft)
+                    direction = Direction.TopRight;
+                else if (direction == Direction.Left)
+                    direction = Direction.Right;
 
-                //left, bottom-left or top-left
-                if (diffX > 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomLeft;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopLeft;
-                    else
-                        direction = Direction.Left;
-                }
+                if (direction == Direction.BottomRight)
+                    direction = Direction.BottomLeft;
+                else if (direction == Direction.TopRight)
+                    direction = Direction.TopLeft;
+                else if (direction == Direction.Right)
+                    direction = Direction.Left;
             }
-            else
-            {
-                //right, bottom-right or top-right
-                if (diffX > 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomRight;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopRight;
-                    else
-                        direction = Direction.Right;
-                }
 
-                //left, bottom-left or top-left
-                if (diffX < 0 && diffXInPixels > marginX)
-                {
-                    if (diffY > 0 && diffYInPixels > marginY)
-                        direction = Direction.BottomLeft;
-                    else if (diffY < 0 && diffYInPixels > marginY)
-                        direction = Direction.TopLeft;
-                    else
-                        direction = Direction.Left;
-                }
-            }
             return direction;
         }
     }

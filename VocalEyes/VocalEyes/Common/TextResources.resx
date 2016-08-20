@@ -154,7 +154,7 @@
     <value>Voice language</value>
   </data>
   <data name="LblLoadingSlow" xml:space="preserve">
-    <value>Initializing facial detection library. This might take a while</value>
+    <value>Initializing libraries. This might take a while</value>
   </data>
   <data name="TtlApp" xml:space="preserve">
     <value>Vocal Eyes</value>
