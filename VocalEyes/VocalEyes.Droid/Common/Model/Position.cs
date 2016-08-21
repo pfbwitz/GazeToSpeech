@@ -6,32 +6,32 @@ namespace VocalEyes.Droid.Common.Model
 {
     public abstract class Position
     {
-        protected readonly List<Point> _pupils = new List<Point>();
+        protected readonly List<Point> Points = new List<Point>();
        
-        protected readonly int _skip;
+        protected readonly int Skip;
 
         protected Position(int skip)
         {
-            _skip = skip;
+            Skip = skip;
         }
 
         public Position Insert(Point point)
         {
-            _pupils.Add(point);
+            Points.Add(point);
             return this;
         }
 
         public Point GetShape()
         {
              Point avg;
-             if (_pupils.Count >= _skip)
+             if (Points.Count >= Skip)
             {
-                avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
-                _pupils.Clear();
-                _pupils.Add(avg);
+                avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
+                Points.Clear();
+                Points.Add(avg);
             }
             else
-                 avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
+                 avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
 
             return avg;
         }
