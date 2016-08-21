@@ -18,11 +18,11 @@ namespace VocalEyes.Common.Data
 		    Connection.DropTable<User>();
 			UpdateTables();
 
-		    var user = new User();
-		    user.CameraFacing = CameraFacing.Back;
-		    user.Language = "en";
-
-            Connection.Insert(user);
+		    Connection.Insert(new User
+		    {
+		        CameraFacing = CameraFacing.Back,
+		        Language = "en"
+		    });
 		}
 
 		public void UpdateTables()

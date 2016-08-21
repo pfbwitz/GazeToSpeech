@@ -3,7 +3,6 @@ using System.Linq;
 using VocalEyes.Common;
 using VocalEyes.Common.Controls;
 using VocalEyes.Common.Data;
-using VocalEyes.Common.Enumeration;
 using VocalEyes.Model;
 using Xamarin.Forms;
 
