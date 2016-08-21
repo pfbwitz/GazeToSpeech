@@ -114,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\local.html" />
+    <Compile Include="Common\Model\Area.cs" />
+    <Compile Include="Common\Model\Position.cs" />
+    <Compile Include="Common\Model\Eye.cs" />
     <Compile Include="Common\Model\EyeArea.cs" />
     <Compile Include="Common\Model\Pupil.cs" />
     <Compile Include="Implementation\ImageHelper.cs" />
@@ -146,7 +149,6 @@
     <None Include="packages.config" />
     <None Include="Resources\AboutResources.txt" />
     <AndroidResource Include="Resources\layout\face_detect_surface_view.axml" />
-    <AndroidResource Include="Resources\layout\Main.axml" />
     <AndroidResource Include="Resources\raw\VocalEyesCommunicate.pdf" />
   </ItemGroup>
   <ItemGroup>

@@ -58,4 +58,15 @@
         android:textColor="@android:color/white"
         android:textSize="10sp"
         android:padding="5dp" />
+  <Button 
+    android:id="@+id/reset"
+    android:text="Recalibrate"
+	android:padding="5dp"
+	android:layout_margin="5dp"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+    android:layout_alignParentRight="true"
+    android:layout_alignParentBottom="true"
+	android:textColor="@android:color/white"
+    android:background="#33006ac2"/>
 </RelativeLayout>

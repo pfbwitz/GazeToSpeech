@@ -98,7 +98,7 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to System will calibrate your eyes. Look straight ahead for 5 seconds..
+        ///   Looks up a localized string similar to System will calibrate your eyes. Follow the instructions spoken by the system.
         /// </summary>
         internal static string LblCalibrationInit {
             get {
@@ -175,6 +175,87 @@ namespace VocalEyes.Common {
         internal static string LblLoadingSlow {
             get {
                 return ResourceManager.GetString("LblLoadingSlow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look bottom left.
+        /// </summary>
+        internal static string MsgLookBottomLeft {
+            get {
+                return ResourceManager.GetString("MsgLookBottomLeft", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look bottom right.
+        /// </summary>
+        internal static string MsgLookBottomRight {
+            get {
+                return ResourceManager.GetString("MsgLookBottomRight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look straight ahead.
+        /// </summary>
+        internal static string MsgLookCenter {
+            get {
+                return ResourceManager.GetString("MsgLookCenter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look down.
+        /// </summary>
+        internal static string MsgLookDown {
+            get {
+                return ResourceManager.GetString("MsgLookDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look left.
+        /// </summary>
+        internal static string MsgLookLeft {
+            get {
+                return ResourceManager.GetString("MsgLookLeft", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look right.
+        /// </summary>
+        internal static string MsgLookRight {
+            get {
+                return ResourceManager.GetString("MsgLookRight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look top left.
+        /// </summary>
+        internal static string MsgLookTopLeft {
+            get {
+                return ResourceManager.GetString("MsgLookTopLeft", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look top right.
+        /// </summary>
+        internal static string MsgLookTopRight {
+            get {
+                return ResourceManager.GetString("MsgLookTopRight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Look up.
+        /// </summary>
+        internal static string MsgLookUp {
+            get {
+                return ResourceManager.GetString("MsgLookUp", resourceCulture);
             }
         }
         

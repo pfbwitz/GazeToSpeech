@@ -130,7 +130,7 @@
     <value>Calibration complete</value>
   </data>
   <data name="LblCalibrationInit" xml:space="preserve">
-    <value>System will calibrate your eyes. Look straight ahead for 5 seconds.</value>
+    <value>System will calibrate your eyes. Follow the instructions spoken by the system</value>
   </data>
   <data name="LblCaptureInfo" xml:space="preserve">
     <value>Initializing the detection libraries can take a long time. Please be patient while it loads.</value>
@@ -155,6 +155,33 @@
   </data>
   <data name="LblLoadingSlow" xml:space="preserve">
     <value>Initializing libraries. This might take a while</value>
+  </data>
+  <data name="MsgLookBottomLeft" xml:space="preserve">
+    <value>Look bottom left</value>
+  </data>
+  <data name="MsgLookBottomRight" xml:space="preserve">
+    <value>Look bottom right</value>
+  </data>
+  <data name="MsgLookCenter" xml:space="preserve">
+    <value>Look straight ahead</value>
+  </data>
+  <data name="MsgLookDown" xml:space="preserve">
+    <value>Look down</value>
+  </data>
+  <data name="MsgLookLeft" xml:space="preserve">
+    <value>Look left</value>
+  </data>
+  <data name="MsgLookRight" xml:space="preserve">
+    <value>Look right</value>
+  </data>
+  <data name="MsgLookTopLeft" xml:space="preserve">
+    <value>Look top left</value>
+  </data>
+  <data name="MsgLookTopRight" xml:space="preserve">
+    <value>Look top right</value>
+  </data>
+  <data name="MsgLookUp" xml:space="preserve">
+    <value>Look up</value>
   </data>
   <data name="TtlApp" xml:space="preserve">
     <value>Vocal Eyes</value>

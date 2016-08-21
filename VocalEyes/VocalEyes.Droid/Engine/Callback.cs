@@ -120,10 +120,10 @@ namespace VocalEyes.Droid.Engine
                     {
                         _activity.HandleException(ex);
                     }
-                    //catch (Exception ex)
-                    //{
-                    //    _activity.Finish();
-                    //}
+                    catch (Exception ex)
+                    {
+                        _activity.HandleException(ex);
+                    }
                     _activity.RunOnUiThread(() =>
                     {
                         _mOpenCvCameraView.EnableView();

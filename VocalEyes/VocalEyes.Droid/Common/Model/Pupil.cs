@@ -1,39 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using OpenCV.Core;
-
 namespace VocalEyes.Droid.Common.Model
 {
-    public class Pupil
+    public class Pupil : Position
     {
-        private readonly List<Point> _pupils = new List<Point>();
-       
-        private readonly int _skip;
-
-        public Pupil(int skip)
+        public Pupil(int skip):base(skip)
         {
-            _skip = skip;
-        }
-
-        public Pupil Insert(Point point)
-        {
-            _pupils.Add(point);
-            return this;
-        }
-
-        public Point GetShape()
-        {
-             Point avg;
-             if (_pupils.Count >= _skip)
-            {
-                avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
-                _pupils.Clear();
-                _pupils.Add(avg);
-            }
-            else
-                 avg = new Point(_pupils.Average(p => p.X), _pupils.Average(p => p.Y));
-
-            return avg;
         }
     }
 }
