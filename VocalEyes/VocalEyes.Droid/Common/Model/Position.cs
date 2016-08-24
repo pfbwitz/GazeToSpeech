@@ -17,7 +17,8 @@ namespace VocalEyes.Droid.Common.Model
 
         public Position Insert(Point point)
         {
-            Points.Add(point);
+            if (point != null)
+                Points.Add(point);
             return this;
         }
 

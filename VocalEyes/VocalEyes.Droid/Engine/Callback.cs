@@ -27,6 +27,15 @@ namespace VocalEyes.Droid.Engine
 
         public override void OnManagerConnected(int status)
         {
+            _activity.RunOnUiThread(
+                           () => _activity.Load1.Text = "Initializing face detection library STATUS: LOADING");
+
+            _activity.RunOnUiThread(
+                         () => _activity.Load2.Text = "Initializing eye detection library STATUS: LOADING");
+
+            _activity.RunOnUiThread(
+                         () => _activity.Load3.Text = "Initializing facial landmark library STATUS: SKIPPING");
+
             if (status == LoaderCallbackInterface.Success)
             {
                 JavaSystem.LoadLibrary("detection_based_tracker");

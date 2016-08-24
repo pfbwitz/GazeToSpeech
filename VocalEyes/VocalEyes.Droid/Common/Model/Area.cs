@@ -46,6 +46,9 @@ namespace VocalEyes.Droid.Common.Model
 
         public Area Insert(Rect rectangle)
         {
+            if (rectangle == null)
+                return this;
+
             RectanglesX.Add(rectangle.X);
             RectanglesY.Add(rectangle.Y);
             RectanglesWidth.Add(rectangle.Width);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Views;
@@ -40,36 +41,35 @@ namespace VocalEyes.Droid.Activities
         {
             Calibrating = true;
 
-            _leftEyeArea = new EyeArea(Constants.AreaSkip);
-            _rightEyeArea = new EyeArea(Constants.AreaSkip);
-
-            CreateGridSubSet();
+            _eyeArea = new EyeArea(Constants.AreaSkip);
+            _face = new FaceArea(Constants.AreaSkip*10);
             _captureMethod = CaptureMethod.Subset;
             _detectionHelper = new DetectionHelper(this);
+
             TextToSpeechHelper = new TextToSpeechHelper();
-            var mDetectorName = new string[2];
-            mDetectorName[JavaDetector] = "Java";
-            mDetectorName[NativeDetector] = "Native (tracking)";
+
+            CreateGridSubSet();
         }
 
         #region properties
 
             #region public
 
-        public bool Running;
+        public List<Subset> SubSets;
 
+        public bool Running;
+        public bool Calibrating;
+        
         public Direction Direction;
 
-        public int FramesPerSecond;
-
-        public bool Calibrating;
-
-        public int Facing;
+        public Subset CurrentSubset;
 
         public TextToSpeechHelper TextToSpeechHelper;
 
         public List<string> CharacterBuffer = new List<string>();
 
+        public int FramesPerSecond;
+        public int Facing;
         public static readonly int JavaDetector = 0;
         public static readonly int NativeDetector = 1;
 
@@ -93,34 +93,27 @@ namespace VocalEyes.Droid.Activities
 
             #region private
 
+        private readonly FaceArea _face;
+        private readonly EyeArea _eyeArea;
+
         private Button _resetButton;
 
-        private EyeArea _leftEyeArea;
-        private EyeArea _rightEyeArea;
+        private bool _readyToCapture;
+        private bool _fpsDetermined;
+
+        private int _framecount;
+        private int _mAbsoluteFaceSize;
+        private readonly int _mDetectorType = JavaDetector;
+
+        private float _mRelativeFaceSize = 0.2f;
+
+        private DateTime? _start;
 
         private ProgressDialog _progress;
 
         private readonly DetectionHelper _detectionHelper;
 
-        private DateTime _calibrationStart;
-
-        private bool _readyToCapture;
-
         private CaptureMethod _captureMethod;
-        private Subset _currentSubset;
-        public List<Subset> SubSets;
-
-        private bool _handling;
-
-        private bool _fpsDetermined;
-
-        private int _framecount;
-        private DateTime? _start;
-
-        private readonly int _mDetectorType = JavaDetector;
-
-        private float _mRelativeFaceSize = 0.2f;
-        private int _mAbsoluteFaceSize;
 
         private CameraBridgeViewBase _mOpenCvCameraView;
 
@@ -158,10 +151,6 @@ namespace VocalEyes.Droid.Activities
             Load1 = FindViewById<TextView>(Resource.Id.p1);
             Load2 = FindViewById<TextView>(Resource.Id.p2);
             Load3 = FindViewById<TextView>(Resource.Id.p3);
-
-            Load1.Text = "Initializing face detection library STATUS: LOADING";
-            Load2.Text = "Initializing eye detection library STATUS: LOADING";
-            Load3.Text = "Initializing facial landmark library STATUS: SKIPPING";
 
             Facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
             _mOpenCvCameraView.SetCameraIndex(Facing);
@@ -223,7 +212,15 @@ namespace VocalEyes.Droid.Activities
 
         public Mat OnCameraFrame(CameraBridgeViewBase.ICvCameraViewFrame inputFrame)
         {
-            RunOnUiThread(() => Clock.Text = DateTime.Now.ToString("t") + " ");
+            RunOnUiThread(() =>
+            {
+                var battery = GetBatteryLife();
+                var batteryString = string.Empty;
+                if (battery.HasValue)
+                    batteryString = battery.Value + "% - ";
+
+                Clock.Text = batteryString + DateTime.Now.ToString("t") + " ";
+            });
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
 
@@ -232,18 +229,10 @@ namespace VocalEyes.Droid.Activities
 
             _framecount++;
 
-            var faces = new MatOfRect();
-
             DetermineFps();
 
             if (!_fpsDetermined || !_readyToCapture)
                 return MRgba;
-
-            if (Calibrating)
-            {
-                var passed = (DateTime.Now - _calibrationStart).Seconds.ToString();
-                this.PutOutlinedText(passed, 10, 10);
-            }
 
             if (_mAbsoluteFaceSize == 0)
             {
@@ -254,6 +243,7 @@ namespace VocalEyes.Droid.Activities
                 MNativeDetector.SetMinFaceSize(_mAbsoluteFaceSize);
             }
 
+            var faces = new MatOfRect();
             if (_mDetectorType == JavaDetector)
             {
                 if (MJavaDetector != null)
@@ -263,41 +253,57 @@ namespace VocalEyes.Droid.Activities
             else if (_mDetectorType == NativeDetector && MNativeDetector != null)
                 MNativeDetector.Detect(MGray, faces);
 
-            var face = _detectionHelper.GetNearestFace(faces.ToArray());
+            var face = _face.Insert(_detectionHelper.GetNearestFace(faces.ToArray())).GetShape();
 
-            if (face != null)
-            {
-                var eyeareaLeft = _leftEyeArea.Insert(new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
-                    (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0))).GetShape();
-                var eyeareaRight = _rightEyeArea.Insert(new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
-                    (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0))).GetShape();
+            if (face == null) 
+                return MRgba;
 
-                Imgproc.Rectangle(MRgba, eyeareaLeft.Tl(), eyeareaLeft.Br(), new Scalar(255, 0, 0, 255), 2);
-                Imgproc.Rectangle(MRgba, eyeareaRight.Tl(), eyeareaRight.Br(), new Scalar(255, 0, 0, 255), 2);
+            Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255));
 
-                Point positionLeft;
-                Point positionRight;
-                _detectionHelper.DetectRightEye(MJavaDetectorEye, eyeareaRight, face, 24, out positionRight);
-                _detectionHelper.DetectLeftEye(MJavaDetectorEye, eyeareaLeft, face, 24, out positionLeft);
-                var position = positionLeft;
+            var eyearea = _eyeArea.Insert(new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
+                (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0))).GetShape();
 
-                if (position == null)
-                    return MRgba;
+            Imgproc.Rectangle(MRgba, eyearea.Tl(), eyearea.Br(), new Scalar(255, 0, 0, 255), 2);
 
-                if(!Calibrating)
-                    PopulateGrid(_detectionHelper.GetDirection(position).Value);
+            Point position;
+            _detectionHelper.DetectLeftEye(MJavaDetectorEye, eyearea, face, 24, out position);
 
-                if (ShouldAct())
-                    RunOnUiThread(() => HandleEyePosition(position));
-            }
+            if (position == null)
+                return MRgba;
+
+            if(!Calibrating)
+                PopulateGrid(_detectionHelper.GetDirection(position).Value);
             return MRgba;
         }
         #endregion
 
         #region custom methods
 
+        public int? GetBatteryLife()
+        {
+            try
+            {
+                using (var filter = new IntentFilter(Intent.ActionBatteryChanged))
+                {
+                    using (var battery = Application.Context.RegisterReceiver(null, filter))
+                    {
+                        var level = battery.GetIntExtra(BatteryManager.ExtraLevel, -1);
+                        var scale = battery.GetIntExtra(BatteryManager.ExtraScale, -1);
+
+                        return (int) Math.Floor(level*100D/scale);
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task Start()
         {
+            if (IsFinishing || _mLoaderCallback.Cancelling)
+                return;
             try
             {
                 while (!Running)
@@ -307,8 +313,13 @@ namespace VocalEyes.Droid.Activities
                     {
                         try
                         {
-                            Clock.Text = DateTime.Now.ToString("t") + " ";
-                            TextViewTimer.Text = Stopwatch.Elapsed.ToString(@"m\:ss");
+                            var battery = GetBatteryLife();
+                            var batteryString = string.Empty;
+                            if (battery.HasValue)
+                                batteryString = battery.Value + "% - ";
+
+                            Clock.Text = batteryString + DateTime.Now.ToString("t") + " ";
+                            TextViewTimer.Text =Stopwatch.Elapsed.ToString(@"m\:ss");
                         }
                         catch(WindowManagerBadTokenException){}
                     });
@@ -332,18 +343,23 @@ namespace VocalEyes.Droid.Activities
                         try
                         {
                             _resetButton.Visibility = ViewStates.Gone;
-                            TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+
+                            _resetButton.Visibility = ViewStates.Visible;
+                            FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
+                            Load1.Text = Load2.Text = Load3.Text = string.Empty;
+
+                            if(!IsFinishing && !_mLoaderCallback.Cancelling)
+                                TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
                             var builder = new AlertDialog.Builder(this);
                             builder.SetMessage(SpeechHelper.CalibrationInit);
                             builder.SetPositiveButton("OK", (a, s) =>
                             {
                                 _resetButton.Visibility = ViewStates.Visible;
                                 FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
-                                Load1.Text=  Load2.Text = Load3.Text = string.Empty;
+                                Load1.Text = Load2.Text = Load3.Text = string.Empty;
 
                                 TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(Direction.Center));
 
-                                _calibrationStart = DateTime.Now;
                                 _readyToCapture = true;
                             });
                             if (!IsFinishing)
@@ -416,63 +432,6 @@ namespace VocalEyes.Droid.Activities
             };
         }
 
-        /// <summary>
-        /// Handle calculated position of the pupil compared to the surface of the entire eye
-        /// </summary>
-        /// <param name="position"></param>
-        public void HandleEyePosition(Point position)
-        {
-            try
-            {
-                TextToSpeechHelper.CancelSpeak();
-
-                if (position == null || _handling)
-                    return;
-
-                _handling = true;
-
-                if (Calibrating)
-                    return;
-
-                var direction = _detectionHelper.GetDirection(position);
-                if (!direction.HasValue)
-                    return;
-
-                TextToSpeechHelper.Speak(direction.ToString());
-
-                //var emptyDirection = direction == Direction.Left || direction == Direction.Right ||
-                //                     direction == Direction.Center;
-
-                //if (_captureMethod == CaptureMethod.Subset && !emptyDirection)
-                //{
-                //    _currentSubset = SubSets.SingleOrDefault(s => s.Direction == direction);
-                //    if (_currentSubset == null)
-                //        return;
-
-                //    TextToSpeechHelper.Speak(direction.ToString());
-                //    _captureMethod = CaptureMethod.Character;
-                //}
-                //else if (_captureMethod == CaptureMethod.Character)
-                //{
-                //    var character = _currentSubset.GetCharacter(direction);
-                //    CharacterBuffer.Add(character);
-                //}
-                //else
-                //{
-                //    TextToSpeechHelper.Speak(string.Join("", CharacterBuffer));
-                //    CharacterBuffer.Clear();
-                //}
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-            finally
-            {
-                _handling = false;
-            }
-        }
-
         public void HandleException(Exception ex)
         {
             Alert(ex.Message, Finish);
@@ -495,9 +454,8 @@ namespace VocalEyes.Droid.Activities
                 return;
 
             var now = DateTime.Now;
-            if (!_start.HasValue)
-                _start = now;
-            else if (now >= _start.Value.AddSeconds(1))
+            var start = _start ?? (_start = now);
+            if (now >= start.Value.AddSeconds(1))
             {
                 FramesPerSecond = _framecount;
                 _fpsDetermined = true;
@@ -508,7 +466,7 @@ namespace VocalEyes.Droid.Activities
         /// Should action be taken with the processed frame
         /// </summary>
         /// <returns>bool</returns>
-        private bool ShouldAct()
+        public bool ShouldAct()
         {
             if (Calibrating)
                 return false;
@@ -523,4 +481,4 @@ namespace VocalEyes.Droid.Activities
 
         #endregion
     }
-}
+};
