@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using VocalEyes.Common.Enumeration;
 using VocalEyes.Common.Utils;
@@ -28,6 +29,9 @@ namespace VocalEyes.Droid.Common.Helper
 
         private readonly List<Point> _centerpoints = new List<Point>();
 
+        private readonly List<double> _averageAngles = new List<double>();
+        public double? AverageAngle;
+
         private Pupil _leftPupil;
 
         private Pupil _rightPupil;
@@ -52,24 +56,14 @@ namespace VocalEyes.Droid.Common.Helper
             return face;
         }
 
-        public Mat DetectLeftEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Point p)
+        public Mat DetectLeftEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Direction direction)
         {
             if(_leftEye == null)
                 _leftEye = new Eye(Constants.PupilSkip);
 
             if (_leftPupil == null)
                 _leftPupil = new Pupil(Constants.PupilSkip);
-            return DetectEye(clasificator, area, face, size, true, out p);
-        }
-
-        public Mat DetectRightEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Point p)
-        {
-            if (_rightEye == null)
-                _rightEye = new Eye(Constants.PupilSkip);
-
-            if (_rightPupil == null)
-                _rightPupil = new Pupil(Constants.PupilSkip);
-            return DetectEye(clasificator, area, face, size, false, out p);
+            return DetectEye(clasificator, area, face, size, out direction);
         }
 
         public async Task ResetCalibration()
@@ -121,14 +115,12 @@ namespace VocalEyes.Droid.Common.Helper
             Imgproc.Circle(vyrez, CenterPoint, PupilRadius, color, thickness);
         }
 
-        public Mat DetectEye(CascadeClassifier clasificator, Rect area, Rect face, int size, bool isLefteye, out Point point)
+        public Mat DetectEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Direction direction)
         {
-            point = null;
             var template = new Mat();
             var mRoi = _activity.MGray.Submat(area);
             var eyes = new MatOfRect();
             var areaMat = _activity.MRgba.Submat(area);
-
 
             clasificator.DetectMultiScale(mRoi, eyes, 1.15, 2, Objdetect.CascadeFindBiggestObject | Objdetect.CascadeScaleImage, new Size(30, 30), new Size());
 
@@ -140,15 +132,9 @@ namespace VocalEyes.Droid.Common.Helper
                 eye.X = area.X + eye.X;
                 eye.Y = area.Y + eye.Y;
 
-                Rect eyeOnlyRectangle;
-
-                if(isLefteye)
-                    eyeOnlyRectangle = _leftEye.Insert(new Rect((int) eye.Tl().X, (int) (eye.Tl().Y + eye.Height*0.4), 
-                        eye.Width, (int) (eye.Height*0.6))).GetShape();
-                else
-                    eyeOnlyRectangle = _rightEye.Insert(new Rect((int)eye.Tl().X, (int)(eye.Tl().Y + eye.Height * 0.4), 
-                        eye.Width, (int)(eye.Height * 0.6))).GetShape();
-                
+                var eyeOnlyRectangle = _leftEye.Insert(new Rect((int) eye.Tl().X, (int) (eye.Tl().Y + eye.Height*0.4), 
+                    eye.Width, (int) (eye.Height*0.6))).GetShape();
+               
                 mRoi = _activity.MGray.Submat(eyeOnlyRectangle);
 
                 var mmG = Core.MinMaxLoc(mRoi);
@@ -157,44 +143,56 @@ namespace VocalEyes.Droid.Common.Helper
 
                 Imgproc.Rectangle(_activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(), new Scalar(255, 255, 255), 2);
                
-                Point avg;
-                if (isLefteye)
-                {
-                    avg = _leftPupil.Insert(cp).GetShape();
-                    Calibrate(avg);
-                    DrawCalibrationPoints(areaMat);
-                    if (!_activity.Calibrating)
-                        HandlePosition(areaMat, avg);
-                }
-                else
-                    avg = _rightPupil.Insert(cp).GetShape();
-
+                var avg = _leftPupil.Insert(cp).GetShape();
+                Calibrate(avg);
+                DrawCalibrationPoints(areaMat);
+                    
+                HandlePosition(areaMat, avg, out direction);
+              
                 Imgproc.Circle(areaMat, avg, PupilRadius, new Scalar(255, 255, 255), 2);
                 Imgproc.Circle(areaMat, avg, 4, new Scalar(255, 255, 255), 2);
                 Imgproc.Circle(areaMat, avg, 3, new Scalar(255, 255, 255), 2);
 
-                point = avg;
                 return template;
             }
+            direction = Direction.Center;
             return template;
         }
 
-        private void HandlePosition(Mat areaMat, Point position)
+        private void HandlePosition(Mat areaMat, Point position, out Direction direction)
         {
+            direction = Direction.Center;
+            if (CenterPoint == null)
+                return;
             Imgproc.Line(areaMat, position, CenterPoint, new Scalar(255, 255, 255), 1);
 
             var origin = new Point(0, 0);
-            Imgproc.Line(areaMat, position, origin, new Scalar(0, 255, 0), 2);
-            Imgproc.Line(areaMat, origin, new Point(position.X, origin.Y), new Scalar(0, 255, 0), 2);
-            Imgproc.Line(areaMat, new Point(position.X, origin.Y), position, new Scalar(0, 255, 0), 2);
 
             var distanceToCenter = TrigonometryHelper.GetHypetonuse(TrigonometryHelper.GetDistance(position.X, CenterPoint.X),
-                 TrigonometryHelper.GetDistance(position.Y, CenterPoint.Y));
+                TrigonometryHelper.GetDistance(position.Y, CenterPoint.Y));
+            var hypotenuseCenter = TrigonometryHelper.GetHypetonuse(TrigonometryHelper.GetDistance(origin.X, CenterPoint.X),
+                    TrigonometryHelper.GetDistance(origin.Y, CenterPoint.Y));
 
             var opposite = TrigonometryHelper.GetDistance(position.X, origin.X);
             var adjacent = TrigonometryHelper.GetDistance(position.Y, origin.Y);
             var hypotenuse = TrigonometryHelper.GetHypetonuse(opposite, adjacent);
             var angle = TrigonometryHelper.GetAngleTangent(opposite, adjacent);
+
+            if (  _averageAngles.Count < _activity.FramesPerSecond * 2)
+            {
+                _averageAngles.Add(angle);
+                return;
+            }
+            if (!AverageAngle.HasValue)
+                AverageAngle = _averageAngles.Average();
+
+            Imgproc.Line(areaMat, position, origin, new Scalar(0, 255, 0), 2);
+            Imgproc.Line(areaMat, origin, new Point(position.X, origin.Y), new Scalar(0, 255, 0), 2);
+            Imgproc.Line(areaMat, new Point(position.X, origin.Y), position, new Scalar(0, 255, 0), 2);
+
+            Imgproc.Line(areaMat, CenterPoint, origin, new Scalar(255, 255, 255), 1);
+
+           
 
             _activity.PutOutlinedText(areaMat, Convert.ToInt32(opposite) + " px", position.X / 2, origin.Y + 15);
             _activity.PutOutlinedText(areaMat, Convert.ToInt32(hypotenuse) + " px", position.X / 2, position.Y / 2 + 5);
@@ -217,10 +215,7 @@ namespace VocalEyes.Droid.Common.Helper
                     if (_activity.Calibrating)
                         return;
 
-                    var direction = GetDirection(position);
-
-                    if (direction.HasValue)
-                        _activity.CurrentSubset = _activity.SubSets.Single(s => s.Direction == direction.Value);
+                    direction = GetDirection(angle, hypotenuse, distanceToCenter, hypotenuseCenter);
 
                     //if (!direction.HasValue)
                     //    return;
@@ -259,6 +254,63 @@ namespace VocalEyes.Droid.Common.Helper
                     Handling = false;
                 }
             }
+        }
+
+        private Direction GetDirection(double angle, double hypotenuse, double distanceToCenter, double hypotenuseCenter)
+        {
+            var direction = Direction.Center;
+            var angleMargin = 30;
+            if (angle < AverageAngle) //gaze inward
+            {
+                if (_activity.Facing == CameraFacing.Back) // right
+                {
+                    direction = Direction.Right;
+                    if (angle < angleMargin)
+                        direction = Direction.TopRight;
+                    else if (angle > angleMargin)
+                        direction = Direction.BottomRight;
+                }
+                else // left
+                {
+                    direction = Direction.Left;
+                    if (angle < angleMargin)
+                        direction = Direction.TopLeft;
+                    else if (angle > angleMargin)
+                        direction = Direction.BottomLeft;
+                }
+            }
+            else if (TrigonometryHelper.GetDistance(angle, AverageAngle.Value) <= AverageAngle.Value + 5) //center gaze
+            {
+                if (hypotenuse + PupilRadius < hypotenuseCenter)
+                {
+                    direction = Direction.Top;
+                }
+                else if (hypotenuse + PupilRadius > hypotenuseCenter)
+                {
+                    direction = Direction.Bottom;
+                }
+            }
+            else //outward gaze
+            {
+                if (_activity.Facing == CameraFacing.Back) // left
+                {
+                    direction = Direction.Left;
+                    if (angle < angleMargin)
+                        direction = Direction.TopLeft;
+                    else if (angle > angleMargin)
+                        direction = Direction.BottomLeft;
+                }
+                else // right
+                {
+                    direction = Direction.Right;
+                    if (angle < angleMargin)
+                        direction = Direction.TopRight;
+                    else if (angle > angleMargin)
+                        direction = Direction.BottomRight;
+                }
+            }
+
+            return direction;
         }
 
         /// <summary>

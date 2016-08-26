@@ -19,7 +19,6 @@ using VocalEyes.Common.Utils;
 using VocalEyes.Droid.Common.Helper;
 using VocalEyes.Droid.Common.Model;
 using VocalEyes.Droid.Engine;
-using Point = OpenCV.Core.Point;
 using Size = OpenCV.Core.Size;
 
 namespace VocalEyes.Droid.Activities
@@ -265,14 +264,14 @@ namespace VocalEyes.Droid.Activities
 
             Imgproc.Rectangle(MRgba, eyearea.Tl(), eyearea.Br(), new Scalar(255, 0, 0, 255), 2);
 
-            Point position;
-            _detectionHelper.DetectLeftEye(MJavaDetectorEye, eyearea, face, 24, out position);
+            Direction direction;
+            _detectionHelper.DetectLeftEye(MJavaDetectorEye, eyearea, face, 24, out direction);
 
-            if (position == null)
+            if (direction == Direction.Center)
                 return MRgba;
 
             if(!Calibrating)
-                PopulateGrid(_detectionHelper.GetDirection(position).Value);
+                PopulateGrid(direction);
             return MRgba;
         }
         #endregion
@@ -437,12 +436,13 @@ namespace VocalEyes.Droid.Activities
             Alert(ex.Message, Finish);
         }
 
-        private void Alert(string message, Action ac)
+        public void Alert(string message, Action ac)
         {
             var builder = new AlertDialog.Builder(this);
             builder.SetTitle("Alert");
             builder.SetMessage(message);
-            builder.SetPositiveButton("OK", (s, a) => ac());
+            if(ac != null)
+                builder.SetPositiveButton("OK", (s, a) => ac());
         }
 
         /// <summary>
