@@ -138,7 +138,7 @@
   <ItemGroup>
     <ProjectReference Include="..\VocalEyes\VocalEyes.csproj">
       <Project>{13C9AE1B-E2C2-4B87-8D2B-5370BB6AB582}</Project>
-      <Name>GazeToSpeech</Name>
+      <Name>VocalEyes</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
