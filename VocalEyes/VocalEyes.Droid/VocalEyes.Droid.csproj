@@ -228,6 +228,7 @@
     <AndroidResource Include="Resources\drawable\camera.png" />
     <AndroidResource Include="Resources\drawable\overlay.png" />
     <AndroidResource Include="Resources\raw\haarcascade_mcs_mouth.xml" />
+    <AndroidResource Include="Resources\raw\haarcascade_mcs_nose.xml" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />

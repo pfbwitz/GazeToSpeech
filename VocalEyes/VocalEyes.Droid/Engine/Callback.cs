@@ -33,8 +33,8 @@ namespace VocalEyes.Droid.Engine
             _activity.RunOnUiThread(
                          () => _activity.Load2.Text = "Initializing eye detection library STATUS: LOADING");
 
-            _activity.RunOnUiThread(
-                         () => _activity.Load3.Text = "Initializing facial landmark library STATUS: SKIPPING");
+            //_activity.RunOnUiThread(
+            //             () => _activity.Load3.Text = "Initializing nose detection library STATUS: LOADING");
 
             if (status == LoaderCallbackInterface.Success)
             {
@@ -88,6 +88,11 @@ namespace VocalEyes.Droid.Engine
 
                         if (_activity.IsFinishing)
                             return;
+
+
+                        if (_activity.IsFinishing)
+                            return;
+
 
                         _activity.MJavaDetector = new CascadeClassifier(_activity.MCascadeFile.AbsolutePath);
 

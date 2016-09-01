@@ -36,6 +36,8 @@ namespace VocalEyes.Droid.Activities
         ScreenOrientation = ScreenOrientation.Landscape)]
     public class CaptureActivity : Activity, CameraBridgeViewBase.ICvCameraViewListener2
     {
+        public int PauseToHandleInSeconds = 2;
+
         public CaptureActivity()
         {
             Calibrating = true;
@@ -76,6 +78,7 @@ namespace VocalEyes.Droid.Activities
         public Mat MGray;
         public File MCascadeFile { get; set; }
         public File MCascadeFileEye { get; set; }
+        
         public CascadeClassifier MJavaDetector { get; set; }
         public CascadeClassifier MJavaDetectorEye { get; set; }
         public DetectionBasedTracker MNativeDetector { get; set; }
@@ -265,7 +268,7 @@ namespace VocalEyes.Droid.Activities
             Imgproc.Rectangle(MRgba, eyearea.Tl(), eyearea.Br(), new Scalar(255, 0, 0, 255), 2);
 
             Direction direction;
-            _detectionHelper.DetectLeftEye(MJavaDetectorEye, eyearea, face, 24, out direction);
+            _detectionHelper.DetectEye(MJavaDetectorEye, eyearea, face, 24, out direction);
 
             if (direction == Direction.Center)
                 return MRgba;
@@ -433,7 +436,7 @@ namespace VocalEyes.Droid.Activities
 
         public void HandleException(Exception ex)
         {
-            Alert(ex.Message, Finish);
+            Alert(ex.Message);//, Finish);
         }
 
         public void Alert(string message, Action ac)
@@ -443,6 +446,17 @@ namespace VocalEyes.Droid.Activities
             builder.SetMessage(message);
             if(ac != null)
                 builder.SetPositiveButton("OK", (s, a) => ac());
+
+            builder.Show();
+        }
+
+        public void Alert(string message)
+        {
+            var builder = new AlertDialog.Builder(this);
+            builder.SetTitle("Alert");
+            builder.SetMessage(message);
+
+            builder.Show();
         }
 
         /// <summary>
@@ -471,7 +485,7 @@ namespace VocalEyes.Droid.Activities
             if (Calibrating)
                 return false;
 
-            if (_fpsDetermined && _framecount >= FramesPerSecond && _readyToCapture)
+            if (_fpsDetermined && _framecount >= FramesPerSecond * PauseToHandleInSeconds && _readyToCapture)
             {
                 _framecount = 0;
                 return true;

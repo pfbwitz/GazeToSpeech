@@ -58,6 +58,7 @@
     <Compile Include="Common\UI\MenuListItem.cs" />
     <Compile Include="Common\UI\MenuViewCell.cs" />
     <Compile Include="Common\Utils\CompareHelper.cs" />
+    <Compile Include="Common\Utils\DirectionHelper.cs" />
     <Compile Include="Common\Utils\SpeechHelper.cs" />
     <Compile Include="Common\Utils\TrigonometryHelper.cs" />
     <Compile Include="Model\BaseModel.cs" />

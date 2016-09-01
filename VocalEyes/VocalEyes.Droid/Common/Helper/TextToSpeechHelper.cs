@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Android.Media;
 using Android.Speech.Tts;
 using Java.Util;
 using Xamarin.Forms;
@@ -31,6 +32,11 @@ namespace VocalEyes.Droid.Common.Helper
         {
             if (_speaker.IsSpeaking)
                 _speaker.Stop();
+        }
+
+        public void PlayBeep()
+        {
+            new ToneGenerator(Stream.Notification, 100).StartTone(Tone.PropBeep, 200);
         }
 
         #region IOnInitListener implementation

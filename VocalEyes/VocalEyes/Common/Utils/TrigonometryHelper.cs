@@ -36,5 +36,14 @@ namespace VocalEyes.Common.Utils
 
             return distance;
         }
+
+        public static int GetDistance(int a, int b)
+        {
+            var distance = a - b;
+            if (distance < 0)
+                distance = distance * -1;
+
+            return distance;
+        }
     }
 }
