@@ -115,6 +115,7 @@
   <ItemGroup>
     <AndroidAsset Include="Assets\local.html" />
     <Compile Include="Common\Model\Area.cs" />
+    <Compile Include="Common\Model\AreaCoordinate.cs" />
     <Compile Include="Common\Model\FaceArea.cs" />
     <Compile Include="Common\Model\Position.cs" />
     <Compile Include="Common\Model\Eye.cs" />
@@ -230,7 +231,6 @@
     <AndroidResource Include="Resources\raw\haarcascade_mcs_mouth.xml" />
     <AndroidResource Include="Resources\raw\haarcascade_mcs_nose.xml" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

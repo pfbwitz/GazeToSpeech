@@ -60,7 +60,7 @@
         android:padding="5dp" />
   <Button 
     android:id="@+id/reset"
-    android:text="Recalibrate"
+    android:text="Calibrate"
 	android:padding="5dp"
 	android:layout_margin="5dp"
 	android:layout_width="wrap_content"

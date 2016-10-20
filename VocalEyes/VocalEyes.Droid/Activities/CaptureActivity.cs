@@ -29,7 +29,7 @@ namespace VocalEyes.Droid.Activities
     ///                 or other disabled individuals, based on the Becker Vocal 
     ///                 Eyes communication by Gary Becker (father of Jason Becker)
     /// Author:         Peter Brachwitz
-    /// Last Update:    August 20 2016
+    /// Last Update:    October 20 2016
     /// </summary>
     [Activity(Label = "Pupil tracking", ConfigurationChanges = ConfigChanges.Orientation,
         Icon = "@drawable/icon",
@@ -53,8 +53,6 @@ namespace VocalEyes.Droid.Activities
         }
 
         #region properties
-
-            #region public
 
         public List<Subset> SubSets;
 
@@ -91,10 +89,6 @@ namespace VocalEyes.Droid.Activities
         public TextView Load3;
         public Stopwatch Stopwatch = new Stopwatch();
 
-            #endregion
-
-            #region private
-
         private readonly FaceArea _face;
         private readonly EyeArea _eyeArea;
 
@@ -121,11 +115,9 @@ namespace VocalEyes.Droid.Activities
 
         private Callback _mLoaderCallback;
 
-            #endregion
-
         #endregion
 
-        #region overrides
+        #region android overrides
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -139,8 +131,30 @@ namespace VocalEyes.Droid.Activities
             FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Gone;
 
             _resetButton = FindViewById<Button>(Resource.Id.reset);
-            _resetButton.Click +=
-                async (sender, args) => await _detectionHelper.ResetCalibration();
+            _resetButton.Click += (s, a) =>
+            {
+                _resetButton.Visibility = ViewStates.Gone;
+                //FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
+                Load1.Text = Load2.Text = Load3.Text = string.Empty;
+
+                if (!IsFinishing && !_mLoaderCallback.Cancelling)
+                    TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
+                var builder = new AlertDialog.Builder(this);
+                builder.SetMessage(SpeechHelper.CalibrationInit);
+                builder.SetPositiveButton("OK", (ar, se) =>
+                {
+                    _resetButton.Visibility = ViewStates.Visible;
+                    FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
+                    Load1.Text = Load2.Text = Load3.Text = string.Empty;
+
+                    TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(Direction.Center));
+
+                    _readyToCapture = true;
+                });
+                if (!IsFinishing)
+                    builder.Show();
+            };
+                //async (sender, args) => await _detectionHelper.ResetCalibration();
             _resetButton.Visibility = ViewStates.Gone;
             
             _mOpenCvCameraView = FindViewById<CameraBridgeViewBase>(Resource.Id.fd_activity_surface_view);
@@ -226,10 +240,10 @@ namespace VocalEyes.Droid.Activities
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
 
-            //var p = new Point(MGray.Width() / 2, MGray.Height() / 2);
-            //Imgproc.Circle(MRgba, p, 10, new Scalar(255, 0, 0));
-            //Imgproc.Circle(MRgba, p, 13, new Scalar(255, 0, 0));
-            //Imgproc.Circle(MRgba, p, 15, new Scalar(255, 0, 0), -1);
+            var centerpointScreen = new Point(MGray.Width() / 2, MGray.Height() / 2);
+            Imgproc.Circle(MRgba, centerpointScreen, 10, new Scalar(255, 0, 0));
+            Imgproc.Circle(MRgba, centerpointScreen, 13, new Scalar(255, 255, 255));
+            Imgproc.Circle(MRgba, centerpointScreen, 15, new Scalar(255, 0, 0));
 
             if (!Running)
                 return MRgba;
@@ -260,8 +274,6 @@ namespace VocalEyes.Droid.Activities
             else if (_mDetectorType == NativeDetector && MNativeDetector != null)
                 MNativeDetector.Detect(MGray, faces);
 
-          
-
             var face = _face.Insert(_detectionHelper.GetNearestFace(faces.ToArray())).GetShape();
 
             if (face == null) 
@@ -284,6 +296,7 @@ namespace VocalEyes.Droid.Activities
                 PopulateGrid(direction);
             return MRgba;
         }
+
         #endregion
 
         #region custom methods
@@ -351,28 +364,7 @@ namespace VocalEyes.Droid.Activities
                     {
                         try
                         {
-                            _resetButton.Visibility = ViewStates.Gone;
-
                             _resetButton.Visibility = ViewStates.Visible;
-                            //FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
-                            Load1.Text = Load2.Text = Load3.Text = string.Empty;
-
-                            if(!IsFinishing && !_mLoaderCallback.Cancelling)
-                                TextToSpeechHelper.Speak(SpeechHelper.CalibrationInit);
-                            var builder = new AlertDialog.Builder(this);
-                            builder.SetMessage(SpeechHelper.CalibrationInit);
-                            builder.SetPositiveButton("OK", (a, s) =>
-                            {
-                                _resetButton.Visibility = ViewStates.Visible;
-                                FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
-                                Load1.Text = Load2.Text = Load3.Text = string.Empty;
-
-                                TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(Direction.Center));
-
-                                _readyToCapture = true;
-                            });
-                            if (!IsFinishing)
-                                builder.Show();
                         }
                         catch (WindowManagerBadTokenException) { }
                     });
@@ -452,7 +444,7 @@ namespace VocalEyes.Droid.Activities
             builder.SetTitle("Alert");
             builder.SetMessage(message);
             if(ac != null)
-                builder.SetPositiveButton("OK", (s, a) => ac());
+                builder.SetPositiveButton("OK", (s, a) => ac.Invoke());
 
             builder.Show();
         }

@@ -16,6 +16,8 @@ namespace VocalEyes.Droid.Common.Helper
 {
     public class DetectionHelper
     {
+        #region properties
+
         private const int PupilRadius = 10;
 
         public bool Handling;
@@ -27,12 +29,8 @@ namespace VocalEyes.Droid.Common.Helper
         public Pupil CenterPoint { get; private set; }
         public Pupil LeftPoint { get; private set; }
         public Pupil RightPoint { get; private set; }
-        public Pupil TopPoint { get; private set; }
-        public Pupil BottomPoint { get; private set; }
-        public Pupil TopLeftPoint { get; private set; }
-        public Pupil BottomLeftPoint { get; private set; }
-        public Pupil TopRightPoint { get; private set; }
-        public Pupil BottomRightPoint { get; private set; }
+        public AreaCoordinate TopPoint { get; private set; }
+        public AreaCoordinate BottomPoint { get; private set; }
 
         private Direction _calibrationDirection = Direction.Center;
 
@@ -40,12 +38,19 @@ namespace VocalEyes.Droid.Common.Helper
 
         private Eye _eye;
 
+        #endregion
+
         public DetectionHelper(CaptureActivity activity)
         {
             _activity = activity;
             SetPoints();
         }
 
+        /// <summary>
+        /// If multiple faces are detected, focus only on the nearest
+        /// </summary>
+        /// <param name="faces"></param>
+        /// <returns></returns>
         public Rect GetNearestFace(IEnumerable<Rect> faces)
         {
             Rect face = null;
@@ -57,19 +62,23 @@ namespace VocalEyes.Droid.Common.Helper
             return face;
         }
 
+        /// <summary>
+        /// (Re)instantiate variables for storing pupil positions
+        /// </summary>
         public void SetPoints()
         {
-            LeftPoint = new Pupil(_activity.FramesPerSecond * 2);
-            RightPoint = new Pupil(_activity.FramesPerSecond * 2);
-            TopPoint = new Pupil(_activity.FramesPerSecond * 2);
-            BottomPoint = new Pupil(_activity.FramesPerSecond * 2);
-            TopLeftPoint = new Pupil(_activity.FramesPerSecond * 2);
-            BottomLeftPoint = new Pupil(_activity.FramesPerSecond * 2);
-            TopRightPoint = new Pupil(_activity.FramesPerSecond * 2);
-            BottomRightPoint = new Pupil(_activity.FramesPerSecond * 2);
-            CenterPoint = new Pupil(_activity.FramesPerSecond * 2);
+            var wait = _activity.FramesPerSecond*2;
+            LeftPoint = new Pupil(wait);
+            RightPoint = new Pupil(wait);
+            TopPoint = new AreaCoordinate(wait);
+            BottomPoint = new AreaCoordinate(wait);
+            CenterPoint = new Pupil(wait);
         }
 
+        /// <summary>
+        /// Reset and recalibrate
+        /// </summary>
+        /// <returns></returns>
         public async Task ResetCalibration()
         {
             App.User.Calibrated = false;
@@ -82,7 +91,12 @@ namespace VocalEyes.Droid.Common.Helper
             await _activity.Start();
         }
 
-        private void Calibrate(Point point, int eyeOnlyAreaY)
+        /// <summary>
+        /// Calibrate extreme pupil positions
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="eyeOnlyAreaY"></param>
+        private void Calibrate(Point point, Point eyeOnlyAreaY)
         {
             var calibrationTime = _activity.FramesPerSecond*2;
             if (!_activity.Calibrating)
@@ -97,22 +111,10 @@ namespace VocalEyes.Droid.Common.Helper
                     RightPoint.Insert(point);
                     break;
                 case Direction.Top:
-                    TopPoint.Insert(point);
+                    TopPoint.Insert(eyeOnlyAreaY);
                     break;
                 case Direction.Bottom:
-                    BottomPoint.Insert(point);
-                    break;
-                case Direction.TopLeft:
-                    TopLeftPoint.Insert(point);
-                    break;
-                case Direction.BottomLeft:
-                    BottomLeftPoint.Insert(point);
-                    break;
-                case Direction.TopRight:
-                    TopRightPoint.Insert(point);
-                    break;
-                case Direction.BottomRight:
-                    BottomRightPoint.Insert(point);
+                    BottomPoint.Insert(eyeOnlyAreaY);
                     break;
                 case Direction.Center:
                     CenterPoint.Insert(point);
@@ -154,43 +156,23 @@ namespace VocalEyes.Droid.Common.Helper
             {
                 BottomPoint.PreCut();
                 App.User.SetPoint(_calibrationDirection, BottomPoint.GetShape().X, BottomPoint.GetShape().Y);
-                _calibrationDirection = Direction.TopLeft;
-                _activity.TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(_calibrationDirection));
-            }
-            else if (_calibrationDirection == Direction.TopLeft && TopLeftPoint.Count >= calibrationTime)
-            {
-                TopLeftPoint.PreCut();
-                App.User.SetPoint(_calibrationDirection, TopLeftPoint.GetShape().X, TopLeftPoint.GetShape().Y);
-                _calibrationDirection = Direction.BottomLeft;
-                _activity.TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(_calibrationDirection));
-            }
-            else if (_calibrationDirection == Direction.BottomLeft && BottomLeftPoint.Count >= calibrationTime)
-            {
-                BottomLeftPoint.PreCut();
-                App.User.SetPoint(_calibrationDirection, BottomLeftPoint.GetShape().X, BottomLeftPoint.GetShape().Y);
-                _calibrationDirection = Direction.TopRight;
-                _activity.TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(_calibrationDirection));
-            }
-            else if (_calibrationDirection == Direction.TopRight && TopRightPoint.Count >= calibrationTime)
-            {
-                TopRightPoint.PreCut();
-                App.User.SetPoint(_calibrationDirection, TopRightPoint.GetShape().X, TopRightPoint.GetShape().Y);
-                _calibrationDirection = Direction.BottomRight;
-                _activity.TextToSpeechHelper.Speak(SpeechHelper.GetDirectionString(_calibrationDirection));
-            }
-            else if (_calibrationDirection == Direction.BottomRight && BottomRightPoint.Count >= calibrationTime)
-            {
-                BottomRightPoint.PreCut();
-                App.User.SetPoint(_calibrationDirection, BottomRightPoint.GetShape().X, BottomRightPoint.GetShape().Y);
-
+              
                 _activity.Calibrating = false;
                 App.User.Calibrated = true;
                 App.User.Save();
-                 _activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
+                _activity.TextToSpeechHelper.Speak(SpeechHelper.CalibrationComplete);
             }
-               
         }
 
+        /// <summary>
+        /// Detect pupil in eyearea bitmap
+        /// </summary>
+        /// <param name="clasificator"></param>
+        /// <param name="area"></param>
+        /// <param name="face"></param>
+        /// <param name="size"></param>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         public Mat DetectEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Direction direction)
         {
             if (_eye == null)
@@ -222,10 +204,12 @@ namespace VocalEyes.Droid.Common.Helper
 
                 Imgproc.Rectangle(_activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(), new Scalar(255, 255, 255), 2);
 
+                var eyeOnlyPoint = new Point(eyeOnlyRectangle.X, eyeOnlyRectangle.Y);
                 var avg = _pupil.Insert(cp).GetShape();
-                Calibrate(avg, eyeOnlyRectangle.Y);
 
-                HandlePosition(areaMat, avg, out direction, area.Y, eyeOnlyRectangle.Y);
+                Calibrate(avg, eyeOnlyPoint);
+
+                HandlePosition(avg, eyeOnlyPoint, out direction);
 
                 Imgproc.Circle(areaMat, avg, PupilRadius, new Scalar(255, 255, 255), 2);
                 Imgproc.Circle(areaMat, avg, 4, new Scalar(255, 255, 255), 2);
@@ -237,7 +221,13 @@ namespace VocalEyes.Droid.Common.Helper
             return template;
         }
 
-        private void HandlePosition(Mat areaMat, Point position, out Direction direction, int eyeAreaY, int eyeOnlyAreaY)
+        /// <summary>
+        /// Determine position of pupil
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="eyeArea"></param>
+        /// <param name="direction"></param>
+        private void HandlePosition(Point position, Point eyeArea, out Direction direction)
         {
             direction = Direction.Center;
 
@@ -247,7 +237,7 @@ namespace VocalEyes.Droid.Common.Helper
                 {
                     Handling = true;
                     _activity.TextToSpeechHelper.PlayBeep();
-                    direction = GetDirection(position, eyeOnlyAreaY);
+                    direction = GetDirection(position, eyeArea);
                     _activity.TextToSpeechHelper.Speak(direction.ToString());
                 }
             }
@@ -279,7 +269,40 @@ namespace VocalEyes.Droid.Common.Helper
             
             return new DirectionDistance
             {
-                Direction = direction, Distance = TrigonometryHelper.GetDistance(distanceX, distanceY)
+                Direction = direction, 
+                Distance = TrigonometryHelper.GetDistance(distanceX, distanceY)
+            };
+        }
+
+        /// <summary>
+        /// Determine the absolute horizontal distance between 2 points
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static DirectionDistance GetDistanceX(Direction direction, Point a, Point b)
+        {
+            return new DirectionDistance
+            {
+                Direction = direction,
+                Distance = a.X - b.X < 0 ? a.X - b.X * -1 : a.X - b.X
+            };
+        }
+
+        /// <summary>
+        /// Determine the absolute vertical distance between 2 points
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static DirectionDistance GetDistanceY(Direction direction, Point a, Point b)
+        {
+            return new DirectionDistance
+            {
+                Direction = direction,
+                Distance = a.Y - b.Y < 0 ? a.Y - b.Y * -1 : a.Y - b.Y
             };
         }
 
@@ -289,14 +312,14 @@ namespace VocalEyes.Droid.Common.Helper
         /// </summary>
         /// <param name="point">pupil position</param>
         /// <param name="eyeOnlyArea"></param>
+        /// <param name="eyeArea"></param>
         /// <returns>Direction of pupil</returns>
-        public Direction GetDirection(Point point, int eyeOnlyAreaY)
+        public Direction GetDirection(Point point, Point eyeArea)
         {
             if (_activity.Calibrating)
                 return Direction.Center;
 
-            var avgEyeAreaY = _eye.GetShape().Y;
-            var diffY = _eye.GetShape().Y - eyeOnlyAreaY;
+            #region determine top, bottom, center, left and right points for comparison
 
             var cp = new Point((CenterPoint.GetShape().X + CenterPoint.LastMeasured.X) / 2, 
                 (CenterPoint.GetShape().Y + CenterPoint.LastMeasured.Y) / 2);
@@ -307,22 +330,75 @@ namespace VocalEyes.Droid.Common.Helper
             var rp = new Point((RightPoint.GetShape().X + RightPoint.LastMeasured.X) / 2,
               (RightPoint.GetShape().Y + RightPoint.LastMeasured.Y) / 2);
 
-            var distances = new List<DirectionDistance>
+            var bp = new Point((BottomPoint.GetShape().X + BottomPoint.LastMeasured.X) / 2,
+             (BottomPoint.GetShape().Y + BottomPoint.LastMeasured.Y) / 2);
+
+            var tp = new Point((TopPoint.GetShape().X + TopPoint.LastMeasured.X) / 2,
+              (TopPoint.GetShape().Y + TopPoint.LastMeasured.Y) / 2);
+
+            #endregion
+
+            #region detect horizontal direction
+
+            var distancesHorizontal = new List<DirectionDistance>
             {
-                GetDistance(Direction.Center, point, cp),
-                GetDistance(Direction.Left, point, lp),
-                GetDistance(Direction.Right, point, rp),
-                //GetDistance(Direction.Top, point, TopPoint.GetShape()),
-                //GetDistance(Direction.Bottom, point, BottomPoint.GetShape()),
-                //GetDistance(Direction.TopLeft, point, TopLeftPoint.GetShape()),
-                //GetDistance(Direction.BottomRight, point, BottomRightPoint.GetShape()),
-                //GetDistance(Direction.TopRight, point, TopRightPoint.GetShape()),
-                //GetDistance(Direction.BottomLeft, point, BottomLeftPoint.GetShape())
+                GetDistanceX(Direction.Center, point, cp),
+                GetDistanceX(Direction.Left, point, lp),
+                GetDistanceX(Direction.Right, point, rp)
             };
 
-            var direction = distances.OrderBy(d => d.Distance).First().Direction;
-            //TODO: determine up/down
-            return direction;
+            var directionHorizontal = distancesHorizontal.OrderBy(d => d.Distance).First().Direction;
+
+            #endregion
+
+            #region detect vertical direction
+
+            var distancesVertical = new List<DirectionDistance>
+            {
+                GetDistanceY(Direction.Center, point, cp),
+                GetDistanceY(Direction.Bottom, eyeArea, bp),
+                GetDistanceY(Direction.Top, eyeArea, tp),
+            };
+            var directionVertical = distancesVertical.OrderBy(d => d.Distance).First().Direction;
+
+            #endregion
+
+            #region combine horizontal and vertical direction to determine gaze direction
+
+            switch (directionHorizontal)
+            {
+                case Direction.Left:
+                    switch (directionVertical)
+                    {
+                        case Direction.Top:
+                            return Direction.TopLeft;
+                        case Direction.Bottom:
+                            return Direction.BottomLeft;
+                    }
+                    return Direction.Left;
+                case Direction.Right:
+                    switch (directionVertical)
+                    {
+                        case Direction.Top:
+                            return Direction.TopRight;
+                        case Direction.Bottom:
+                            return Direction.TopRight;
+                    }
+                    return Direction.Right;
+                case Direction.Center:
+                      switch (directionVertical)
+                    {
+                        case Direction.Top:
+                            return Direction.Top;
+                        case Direction.Bottom:
+                            return Direction.Bottom;
+                    }
+                    return Direction.Center;
+            }
+
+            #endregion
+
+            return Direction.Center;
         }
     }
 }
