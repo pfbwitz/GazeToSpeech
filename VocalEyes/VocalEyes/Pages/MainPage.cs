@@ -16,6 +16,10 @@ namespace VocalEyes.Pages
             Padding = new Thickness(0, Device.OnPlatform(20, 0, 0), 0, 0);
             Master = GetMenu();
             _list.SelectedItem = _list.ItemsSource.Cast<MenuListItem>().First();
+
+#if DEBUG
+            //DependencyService.Get<IOpenCvEngine>().Open(App.User.CameraFacing);
+#endif
         }
 
         private ContentPage GetMenu()

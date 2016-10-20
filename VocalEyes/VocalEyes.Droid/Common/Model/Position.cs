@@ -1,10 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using OpenCV.Core;
 
 namespace VocalEyes.Droid.Common.Model
 {
-    public abstract class Position
+    public abstract class Position : IEnumerable<Point>
     {
         protected readonly List<Point> Points = new List<Point>();
        
@@ -35,6 +36,16 @@ namespace VocalEyes.Droid.Common.Model
                  avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
 
             return avg;
+        }
+
+        public IEnumerator<Point> GetEnumerator()
+        {
+            return Points.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

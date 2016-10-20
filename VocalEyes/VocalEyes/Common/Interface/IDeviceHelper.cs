@@ -7,6 +7,6 @@ namespace VocalEyes.Common.Interface
     {
         string GetVersion();
 
-        List<Language> GetAvailableLanguages();
+        //List<Language> GetAvailableLanguages();
     }
 }

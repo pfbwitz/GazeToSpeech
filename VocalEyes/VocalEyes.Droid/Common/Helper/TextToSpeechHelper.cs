@@ -13,6 +13,7 @@ namespace VocalEyes.Droid.Common.Helper
 
         public void Speak(string text)
         {
+            CancelSpeak();
             var ctx = Forms.Context;
             _toSpeak = text;
             if (_speaker == null)
@@ -28,9 +29,9 @@ namespace VocalEyes.Droid.Common.Helper
             }
         }
 
-        public void CancelSpeak()
+        private void CancelSpeak()
         {
-            if (_speaker.IsSpeaking)
+            if (_speaker != null && _speaker.IsSpeaking)
                 _speaker.Stop();
         }
 

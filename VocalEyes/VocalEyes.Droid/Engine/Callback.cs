@@ -132,11 +132,11 @@ namespace VocalEyes.Droid.Engine
                     }
                     catch (IOException ex)
                     {
-                        _activity.HandleException(ex);
+                        _activity.RunOnUiThread(() => _activity.HandleException(ex));
                     }
                     catch (Exception ex)
                     {
-                        _activity.HandleException(ex);
+                        _activity.RunOnUiThread(() => _activity.HandleException(ex));
                     }
                     _activity.RunOnUiThread(() =>
                     {

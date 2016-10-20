@@ -59,7 +59,7 @@ namespace VocalEyes.Droid.Activities
         public List<Subset> SubSets;
 
         public bool Running;
-        public bool Calibrating;
+        public bool Calibrating { get; set; }
         
         public Direction Direction;
 
@@ -226,6 +226,11 @@ namespace VocalEyes.Droid.Activities
             MRgba = inputFrame.Rgba();
             MGray = inputFrame.Gray();
 
+            //var p = new Point(MGray.Width() / 2, MGray.Height() / 2);
+            //Imgproc.Circle(MRgba, p, 10, new Scalar(255, 0, 0));
+            //Imgproc.Circle(MRgba, p, 13, new Scalar(255, 0, 0));
+            //Imgproc.Circle(MRgba, p, 15, new Scalar(255, 0, 0), -1);
+
             if (!Running)
                 return MRgba;
 
@@ -254,6 +259,8 @@ namespace VocalEyes.Droid.Activities
             }
             else if (_mDetectorType == NativeDetector && MNativeDetector != null)
                 MNativeDetector.Detect(MGray, faces);
+
+          
 
             var face = _face.Insert(_detectionHelper.GetNearestFace(faces.ToArray())).GetShape();
 
@@ -347,7 +354,7 @@ namespace VocalEyes.Droid.Activities
                             _resetButton.Visibility = ViewStates.Gone;
 
                             _resetButton.Visibility = ViewStates.Visible;
-                            FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
+                            //FindViewById<ImageView>(Resource.Id.overlay).Visibility = ViewStates.Visible;
                             Load1.Text = Load2.Text = Load3.Text = string.Empty;
 
                             if(!IsFinishing && !_mLoaderCallback.Cancelling)
