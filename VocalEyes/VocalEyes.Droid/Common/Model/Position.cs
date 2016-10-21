@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,15 +26,15 @@ namespace VocalEyes.Droid.Common.Model
 
         public Point GetShape()
         {
-             Point avg;
-             if (Points.Count >= Skip)
+            Point avg;
+            if (Points.Count >= Skip)
             {
                 avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
                 Points.Clear();
                 Points.Add(avg);
             }
             else
-                 avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
+                avg = new Point(Points.Average(p => p.X), Points.Average(p => p.Y));
 
             return avg;
         }

@@ -41,6 +41,7 @@
     <Compile Include="Common\Data\DatabaseHelper.cs" />
     <Compile Include="Common\Data\QueryHelper.cs" />
     <Compile Include="Common\Enumeration\CameraFacing.cs" />
+    <Compile Include="Common\Enumeration\CaptureEye.cs" />
     <Compile Include="Common\Enumeration\CaptureMethod.cs" />
     <Compile Include="Common\Enumeration\Direction.cs" />
     <Compile Include="Common\Enumeration\MatchingMethod.cs" />

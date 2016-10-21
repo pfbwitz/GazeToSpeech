@@ -134,6 +134,15 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Eye.
+        /// </summary>
+        internal static string LblEye {
+            get {
+                return ResourceManager.GetString("LblEye", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Camera facing.
         /// </summary>
         internal static string LblFacing {
@@ -170,11 +179,29 @@ namespace VocalEyes.Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Left eye.
+        /// </summary>
+        internal static string LblLeftEye {
+            get {
+                return ResourceManager.GetString("LblLeftEye", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Initializing libraries. This might take a while.
         /// </summary>
         internal static string LblLoadingSlow {
             get {
                 return ResourceManager.GetString("LblLoadingSlow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Right eye.
+        /// </summary>
+        internal static string LblRightEye {
+            get {
+                return ResourceManager.GetString("LblRightEye", resourceCulture);
             }
         }
         

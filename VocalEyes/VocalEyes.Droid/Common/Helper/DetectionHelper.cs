@@ -176,7 +176,7 @@ namespace VocalEyes.Droid.Common.Helper
         public Mat DetectEye(CascadeClassifier clasificator, Rect area, Rect face, int size, out Direction direction)
         {
             if (_eye == null)
-                _eye = new Eye(Constants.PupilSkip);
+                _eye = new Eye(Constants.AreaSkip);
 
             if (_pupil == null)
                 _pupil = new Pupil(Constants.PupilSkip);
@@ -185,6 +185,17 @@ namespace VocalEyes.Droid.Common.Helper
             var eyes = new MatOfRect();
             var mRoi = _activity.MGray.Submat(area);
             var areaMat = _activity.MRgba.Submat(area);
+
+            //Imgproc.Threshold(mRoi.Clone(), mRoi, 100, 255, Imgproc.ThreshBinary);
+
+            // Built in equalizeHist function.
+            Imgproc.EqualizeHist(mRoi.Clone(), mRoi); // Causes a lot of noise in darker images.
+
+            // Built in Contrast Limited Adaptive Histogram Equalization.
+            //CLAHE mClahe = Imgproc.CreateCLAHE(2, new Size(8, 8));
+            //mClahe.Apply(mRoi.Clone(), mRoi); // Seems not to work in (fairly) dark images.
+            //mClahe.CollectGarbage();
+            
             clasificator.DetectMultiScale(mRoi, eyes, 1.15, 2, Objdetect.CascadeFindBiggestObject | 
                 Objdetect.CascadeScaleImage, new Size(30, 30), new Size());
 
@@ -203,7 +214,7 @@ namespace VocalEyes.Droid.Common.Helper
                     mmG.MinLoc.Y + PupilRadius / 2 + (eyeOnlyRectangle.Y - area.Y));
 
                 Imgproc.Rectangle(_activity.MRgba, eyeOnlyRectangle.Tl(), eyeOnlyRectangle.Br(), new Scalar(255, 255, 255), 2);
-
+                
                 var eyeOnlyPoint = new Point(eyeOnlyRectangle.X, eyeOnlyRectangle.Y);
                 var avg = _pupil.Insert(cp).GetShape();
 

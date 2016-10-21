@@ -20,6 +20,7 @@ namespace VocalEyes.Common.Data
 
 		    Connection.Insert(new User
 		    {
+                CaptureEye = CaptureEye.LEFT.ToString(),
 		        CameraFacing = CameraFacing.Back,
 		        Language = "en"
 		    });

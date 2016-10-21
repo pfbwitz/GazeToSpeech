@@ -16,6 +16,9 @@ namespace VocalEyes.Model
         [Column("LANGUAGE")]
         public string Language { get; set; }
 
+        [Column("CAPTUREEYE")]
+        public string CaptureEye { get; set; }
+
         [Column("CAMERAFACING")]
         public int CameraFacing { get; set; }
 

@@ -141,6 +141,9 @@
   <data name="LblEnglish" xml:space="preserve">
     <value>English</value>
   </data>
+  <data name="LblEye" xml:space="preserve">
+    <value>Eye</value>
+  </data>
   <data name="LblFacing" xml:space="preserve">
     <value>Camera facing</value>
   </data>
@@ -153,8 +156,14 @@
   <data name="LblLanguage" xml:space="preserve">
     <value>Voice language</value>
   </data>
+  <data name="LblLeftEye" xml:space="preserve">
+    <value>Left eye</value>
+  </data>
   <data name="LblLoadingSlow" xml:space="preserve">
     <value>Initializing libraries. This might take a while</value>
+  </data>
+  <data name="LblRightEye" xml:space="preserve">
+    <value>Right eye</value>
   </data>
   <data name="MsgLookBottomLeft" xml:space="preserve">
     <value>Look bottom left</value>

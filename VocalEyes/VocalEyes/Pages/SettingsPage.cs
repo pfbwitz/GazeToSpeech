@@ -3,6 +3,7 @@ using System.Linq;
 using VocalEyes.Common;
 using VocalEyes.Common.Controls;
 using VocalEyes.Common.Data;
+using VocalEyes.Common.Enumeration;
 using VocalEyes.Model;
 using Xamarin.Forms;
 
@@ -68,13 +69,38 @@ namespace VocalEyes.Pages
                 Children = { facingImage, facingPicker }
             };
 
+            var eyeImage = new Image
+            {
+                Source = "camera.png",
+                WidthRequest = 32,
+                HeightRequest = 32,
+                HorizontalOptions = LayoutOptions.Start,
+                VerticalOptions = LayoutOptions.Center
+            };
+            var eyePicker = new Picker { HorizontalOptions = LayoutOptions.FillAndExpand };
+            eyePicker.Items.Add(TextResources.LblLeftEye);
+            eyePicker.Items.Add(TextResources.LblRightEye);
+            eyePicker.SelectedIndexChanged += (sender, args) =>
+            {
+                App.User.CaptureEye = ((Picker)sender).SelectedIndex == 0 ? CaptureEye.LEFT.ToString() : CaptureEye.RIGHT.ToString();
+                QueryHelper<User>.InsertOrReplace(App.User);
+            };
+            var eyeStack = new StackLayout
+            {
+                Orientation = StackOrientation.Horizontal,
+                Children = { eyeImage, eyePicker }
+            };
+            eyePicker.SelectedIndex = App.User.CaptureEye == CaptureEye.LEFT.ToString() ? 0 : 1;
+
             Content = new StackLayout { 
                 Children =
                 {
                     new CustomLabel{Text=TextResources.LblLanguage},
                     languageStack, 
                     new CustomLabel{Text=TextResources.LblFacing},
-                    facingStack
+                    facingStack,
+                    new CustomLabel{Text=TextResources.LblEye},
+                    eyeStack
                 } 
             };
         }

@@ -169,6 +169,7 @@ namespace VocalEyes.Droid.Activities
             Load3 = FindViewById<TextView>(Resource.Id.p3);
 
             Facing = Intent.GetIntExtra(typeof(CameraFacing).Name, CameraFacing.Front);
+            
             _mOpenCvCameraView.SetCameraIndex(Facing);
             _mOpenCvCameraView.SetCvCameraViewListener2(this);
 
@@ -280,9 +281,20 @@ namespace VocalEyes.Droid.Activities
                 return MRgba;
 
             Imgproc.Rectangle(MRgba, face.Tl(), face.Br(), new Scalar(255, 255, 255));
-
-            var eyearea = _eyeArea.Insert(new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
-                (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0))).GetShape();
+            Rect eyearea;
+            switch ((CaptureEye)Enum.Parse(typeof(CaptureEye), App.User.CaptureEye))
+            {
+                case CaptureEye.LEFT:
+                    eyearea = new Rect(face.X + face.Width / 16 + (face.Width - 2 * face.Width / 16) / 2,
+                        (int)(face.Y + (face.Height / 4.5)), (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
+                    break;
+                case CaptureEye.RIGHT:
+                    eyearea = new Rect(face.X + face.Width / 16, (int)(face.Y + (face.Height / 4.5)),
+                        (face.Width - 2 * face.Width / 16) / 2, (int)(face.Height / 3.0));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             Imgproc.Rectangle(MRgba, eyearea.Tl(), eyearea.Br(), new Scalar(255, 0, 0, 255), 2);
 

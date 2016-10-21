@@ -230,6 +230,10 @@
     <AndroidResource Include="Resources\drawable\overlay.png" />
     <AndroidResource Include="Resources\raw\haarcascade_mcs_mouth.xml" />
     <AndroidResource Include="Resources\raw\haarcascade_mcs_nose.xml" />
+    <AndroidResource Include="Resources\drawable\eye.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\eye.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\eye.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\eye.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\..\packages\Xamarin.Forms.2.0.0.6482\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />
